@@ -23,8 +23,8 @@ android {
         applicationId = "com.mj.transitmap"
         minSdk = 24
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.0.2"
+        versionCode = 5
+        versionName = "1.0.3"
 
         buildConfigField("String", "GBIS_SERVICE_KEY", "\"${localProp("GBIS_SERVICE_KEY")}\"")
         buildConfigField("String", "SEOUL_SUBWAY_KEY", "\"${localProp("SEOUL_SUBWAY_KEY")}\"")

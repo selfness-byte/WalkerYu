@@ -4,6 +4,7 @@ local.properties
 build/
 *.apk
 !dist/WalkerYu-1.0.0.apk
+!dist/WalkerYu-1.0.3.apk
 !dist/update.json
 ._*
 .DS_Store

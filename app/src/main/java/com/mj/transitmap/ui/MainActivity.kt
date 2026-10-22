@@ -220,6 +220,7 @@ class MainActivity : AppCompatActivity() {
         }
         refreshStopMarkers()
         updateModeBanner()
+        AppUpdater.resumePendingInstallIfAllowed(this)
     }
 
     override fun onPause() {

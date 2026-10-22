@@ -16,7 +16,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.materialswitch.MaterialSwitch
-import com.mj.transitmap.BuildConfig
 import com.mj.transitmap.R
 import com.mj.transitmap.data.AppPrefs
 import com.mj.transitmap.data.LocationHelper
@@ -90,7 +89,9 @@ class SettingsActivity : AppCompatActivity() {
             startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
         }
         val versionText = findViewById<TextView>(R.id.versionText)
-        versionText.text = "WalkerYu v${BuildConfig.VERSION_NAME} (code ${BuildConfig.VERSION_CODE}) · 자동 업데이트 지원"
+        val curName = AppUpdater.installedVersionName(this)
+        val curCode = AppUpdater.installedVersionCode(this)
+        versionText.text = "WalkerYu v$curName (code $curCode) · 자동 업데이트 지원"
         findViewById<MaterialButton>(R.id.btnCheckUpdate).setOnClickListener {
             AppUpdater.checkManual(this, lifecycleScope) { msg ->
                 versionText.text = msg
@@ -102,6 +103,7 @@ class SettingsActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         updatePermText()
+        AppUpdater.resumePendingInstallIfAllowed(this)
     }
 
     override fun onSupportNavigateUp(): Boolean {
