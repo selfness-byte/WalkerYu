@@ -54,11 +54,14 @@ object LocationHelper {
         return if (elapsed >= 0L) elapsed else (System.currentTimeMillis() - loc.time).coerceAtLeast(0L)
     }
 
-    private fun remember(loc: Location?): Location? {
+    private fun remember(loc: Location?, ctx: Context? = null): Location? {
         if (loc != null) {
             val cur = latestMemoryLocation
             if (cur == null || ageMs(loc) <= ageMs(cur) + 5_000L) {
                 latestMemoryLocation = loc
+            }
+            if (ctx != null) {
+                runCatching { AppPrefs(ctx).saveLastLocation(loc.latitude, loc.longitude) }
             }
         }
         return loc
@@ -89,7 +92,7 @@ object LocationHelper {
         } else {
             candidates.minByOrNull { ageMs(it) }
         }
-        return remember(chosen)
+        return remember(chosen, ctx)
     }
 
     /**
@@ -109,7 +112,7 @@ object LocationHelper {
                     .addOnFailureListener { if (cont.isActive) cont.resume(null) }
             }
         }
-        remember(fusedLast)
+        remember(fusedLast, ctx)
         return when {
             fusedLast == null -> syncLoc
             syncLoc == null -> fusedLast
@@ -154,7 +157,7 @@ object LocationHelper {
                 jobBalanced.cancel()
                 jobHigh.cancel()
                 jobLm.cancel()
-                remember(result)
+                remember(result, appCtx)
             }
         }
     }
@@ -162,14 +165,15 @@ object LocationHelper {
     /**
      * 위젯(1분 주기 위치 ON 갱신) 및 일반 호출용:
      * 35초 이내의 최신 캐시가 있으면 즉시 반환하고, 그보다 오래되었으면 새 위치를 빠르게 조회한다.
+     * 백그라운드 권한 제한 등으로 실시간 위치 조회가 실패하더라도 마지막으로 확인된 위치를 보조로 반환한다.
      */
     suspend fun current(ctx: Context, timeoutMs: Long = 2500L): Location? {
-        if (!hasForeground(ctx)) return null
+        if (!hasForeground(ctx)) return AppPrefs(ctx).lastKnownLocation()
         val fast = peekFast(ctx)
         if (fast != null && ageMs(fast) <= 35_000L) {
             return fast
         }
-        return fresh(ctx, timeoutMs) ?: fast
+        return fresh(ctx, timeoutMs) ?: fast ?: AppPrefs(ctx).lastKnownLocation()
     }
 
     /**
@@ -186,7 +190,7 @@ object LocationHelper {
             .build()
         val cb = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
-                result.lastLocation?.let { remember(it) }
+                result.lastLocation?.let { remember(it, appCtx) }
             }
         }
         warmupCallback = cb

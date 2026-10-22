@@ -12,6 +12,7 @@ import com.mj.transitmap.R
 import com.mj.transitmap.data.AppPrefs
 import com.mj.transitmap.ui.MainActivity
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -88,14 +89,13 @@ object WidgetRenderer {
             .values
             .toList()
 
-        // 가장 가까운 정류장/역 거리 계산 (흰색 네온 깜빡임 판정용)
-        val nearestDist = stopGroups.mapNotNull { it.firstOrNull()?.distanceM }.minOrNull()
+        val locOn = prefs.widgetUseLocation
+        // 가장 가까운 정류장/역 거리 계산 (위치 ON 일 때만 흰색 네온 깜빡임 판정)
+        val nearestDist = if (locOn) stopGroups.mapNotNull { it.firstOrNull()?.distanceM }.minOrNull() else null
 
         // 위젯 바깥 테두리는 항상 기본 고대비 다크 배경(widget_bg) 유지
         rv.setInt(R.id.w_root, "setBackgroundResource", R.drawable.widget_bg)
         rv.setTextViewText(R.id.w_title, snap.header)
-
-        val locOn = prefs.widgetUseLocation
         val locLabel = if (mode == WidgetMode.SMALL) {
             if (locOn) "📍ON·1분" else "○위치 OFF"
         } else {
@@ -150,8 +150,8 @@ object WidgetRenderer {
         for (group in stopGroups.take(mode.maxGroups)) {
             if (totalShown >= mode.maxTotalItems) break
             val first = group.first()
-            val dist = first.distanceM
-            val isNear = dist != null && (dist <= NEON_DISTANCE_M || (dist == nearestDist && dist <= NEON_NEAREST_MAX_M))
+            val dist = if (locOn) first.distanceM else null
+            val isNear = locOn && dist != null && (dist <= NEON_DISTANCE_M || (dist == nearestDist && dist <= NEON_NEAREST_MAX_M))
 
             // 내 위치와 가까운 정류장/역은 천천히 깜빡이는 흰색 테두리 레이아웃(widget_group_neon_card)으로 렌더링
             val groupLayout = if (isNear) R.layout.widget_group_neon_card else R.layout.widget_group
@@ -272,16 +272,17 @@ object WidgetUpdater {
 
     suspend fun refreshAll(ctx: Context) {
         if (!hasWidgets(ctx)) return
-        if (!refreshMutex.tryLock()) return
-        try {
+        refreshMutex.withLock {
             val prefs = AppPrefs(ctx)
+            val startLoc = prefs.widgetUseLocation
             val prev = WidgetSnapshot.fromJson(prefs.widgetSnapshotJson)
-            val snap = runCatching { WidgetDataBuilder(ctx).build(prev) }
+            var snap = runCatching { WidgetDataBuilder(ctx).build(prev) }
                 .getOrElse { prev.copy(note = "갱신 실패 — 이전 정보 표시 중") }
+            if (prefs.widgetUseLocation != startLoc) {
+                snap = runCatching { WidgetDataBuilder(ctx).build(snap) }.getOrDefault(snap)
+            }
             prefs.widgetSnapshotJson = snap.toJson()
             renderAll(ctx, refreshing = false)
-        } finally {
-            refreshMutex.unlock()
         }
     }
 

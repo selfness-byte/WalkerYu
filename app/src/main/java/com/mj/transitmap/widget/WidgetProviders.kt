@@ -45,20 +45,48 @@ class LargeWidgetProvider : BaseTransitWidget()
 /** 위젯 버튼: 📍위치 갱신 ON/OFF, ⟳ 새로고침, 1분 자동 갱신 틱 */
 class WidgetActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        val appCtx = context.applicationContext
         when (intent.action) {
             ACTION_TOGGLE_LOCATION -> {
-                val prefs = AppPrefs(context)
+                val prefs = AppPrefs(appCtx)
                 prefs.widgetUseLocation = !prefs.widgetUseLocation
-                WidgetRefreshJob.syncMinuteSchedule(context)
-                WidgetUpdater.requestRefresh(context)
+                WidgetRefreshJob.syncMinuteSchedule(appCtx)
+                WidgetUpdater.renderAll(appCtx, refreshing = true)
+                val pending = goAsync()
+                CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
+                    try {
+                        WidgetUpdater.refreshAll(appCtx)
+                    } finally {
+                        WidgetRefreshJob.syncMinuteSchedule(appCtx)
+                        pending.finish()
+                    }
+                }
             }
             ACTION_REFRESH -> {
-                WidgetRefreshJob.syncMinuteSchedule(context)
-                WidgetUpdater.requestRefresh(context)
+                WidgetRefreshJob.syncMinuteSchedule(appCtx)
+                WidgetUpdater.renderAll(appCtx, refreshing = true)
+                val pending = goAsync()
+                CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
+                    try {
+                        WidgetUpdater.refreshAll(appCtx)
+                    } finally {
+                        WidgetRefreshJob.syncMinuteSchedule(appCtx)
+                        pending.finish()
+                    }
+                }
             }
             ACTION_MINUTE_TICK -> {
-                if (AppPrefs(context).widgetUseLocation && WidgetUpdater.hasWidgets(context)) {
-                    WidgetRefreshJob.runNow(context)
+                if (AppPrefs(appCtx).widgetUseLocation && WidgetUpdater.hasWidgets(appCtx)) {
+                    WidgetRefreshJob.syncMinuteSchedule(appCtx)
+                    val pending = goAsync()
+                    CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
+                        try {
+                            WidgetUpdater.refreshAll(appCtx)
+                        } finally {
+                            WidgetRefreshJob.syncMinuteSchedule(appCtx)
+                            pending.finish()
+                        }
+                    }
                 }
             }
         }

@@ -34,7 +34,9 @@ class WidgetDataBuilder(private val context: Context) {
         var note = ""
         val loc = if (useLoc) {
             when {
-                !LocationHelper.hasForeground(context) -> { note = "위치 권한 없음 — 앱 설정에서 허용"; null }
+                !LocationHelper.hasForeground(context) -> {
+                    LocationHelper.current(context).also { if (it == null) note = "위치 권한 없음 — 앱 설정에서 허용" }
+                }
                 !LocationHelper.hasBackground(context) -> {
                     LocationHelper.current(context).also { if (it == null) note = "백그라운드 위치 권한 필요 (설정 > 항상 허용)" }
                 }

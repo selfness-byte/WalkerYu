@@ -209,6 +209,27 @@ class AppPrefs(context: Context) {
         return out
     }
 
+    fun saveLastLocation(lat: Double, lng: Double) {
+        if (lat == 0.0 && lng == 0.0) return
+        sp.edit()
+            .putString(K_LAST_LOC, "$lat,$lng,${System.currentTimeMillis()}")
+            .apply()
+    }
+
+    fun lastKnownLocation(): android.location.Location? {
+        val raw = sp.getString(K_LAST_LOC, null) ?: return null
+        val parts = raw.split(",")
+        if (parts.size < 2) return null
+        val lat = parts[0].toDoubleOrNull() ?: return null
+        val lng = parts[1].toDoubleOrNull() ?: return null
+        val t = parts.getOrNull(2)?.toLongOrNull() ?: System.currentTimeMillis()
+        return android.location.Location("prefs").apply {
+            latitude = lat
+            longitude = lng
+            time = t
+        }
+    }
+
     companion object {
         private const val K_GBIS = "gbis_key"
         private const val K_SUBWAY = "subway_key"
@@ -219,5 +240,6 @@ class AppPrefs(context: Context) {
         private const val K_SAVED_ITEMS = "saved_board_items"
         private const val K_WIDGET_SNAP = "widget_snapshot"
         private const val K_STATIONS = "known_stations"
+        private const val K_LAST_LOC = "last_known_loc"
     }
 }
