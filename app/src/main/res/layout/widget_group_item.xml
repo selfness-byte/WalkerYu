@@ -17,15 +17,15 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:maxLines="1"
-        android:minWidth="52dp"
-        android:paddingHorizontal="8dp"
-        android:paddingVertical="3.5dp"
+        android:minWidth="56dp"
+        android:paddingHorizontal="9dp"
+        android:paddingVertical="4dp"
         android:shadowColor="#DD000000"
         android:shadowDx="0"
         android:shadowDy="1"
         android:shadowRadius="2.5"
         android:textColor="#FFFFFF"
-        android:textSize="13.5sp"
+        android:textSize="15.5sp"
         android:textStyle="bold" />
 
     <!-- 진행방향 (상행/하행/방면 고대비 컬러 + 또렷한 그림자) -->
@@ -42,7 +42,7 @@
         android:shadowDy="1"
         android:shadowRadius="2.5"
         android:textColor="#64D8FF"
-        android:textSize="13.5sp"
+        android:textSize="15.5sp"
         android:textStyle="bold" />
 
     <!-- 도착 시간 (우측 정렬 강조 + 또렷한 그림자) -->
@@ -58,6 +58,6 @@
         android:shadowDy="1"
         android:shadowRadius="2.5"
         android:textColor="#FFD600"
-        android:textSize="14.5sp"
+        android:textSize="16.5sp"
         android:textStyle="bold" />
 </LinearLayout>

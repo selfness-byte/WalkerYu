@@ -68,7 +68,7 @@
                 android:shadowDy="1"
                 android:shadowRadius="3"
                 android:textColor="#FFFFFF"
-                android:textSize="15.5sp"
+                android:textSize="17.5sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -81,7 +81,7 @@
                 android:shadowDy="1"
                 android:shadowRadius="2.5"
                 android:textColor="#FFFFFF"
-                android:textSize="12.5sp"
+                android:textSize="14.5sp"
                 android:textStyle="bold" />
         </LinearLayout>
 

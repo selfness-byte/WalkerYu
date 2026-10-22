@@ -229,6 +229,7 @@ class MainActivity : AppCompatActivity() {
         LocationHelper.stopWarmup(this)
     }
 
+    @Suppress("DEPRECATION")
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
         if (level >= TRIM_MEMORY_RUNNING_LOW || level >= TRIM_MEMORY_UI_HIDDEN) {
@@ -248,12 +249,13 @@ class MainActivity : AppCompatActivity() {
         sheetJob?.cancel()
         routeJob?.cancel()
         trainJob?.cancel()
+        hideJob?.cancel()
         myLocOverlay?.disableMyLocation()
         myLocOverlay = null
         LocationHelper.stopWarmup(this)
-        stopMarkers.clear()
-        trainOverlays.clear()
-        routeOverlays.clear()
+        detachAndClearMarkers(stopMarkers)
+        clearOverlays(trainOverlays, invalidate = false)
+        clearOverlays(routeOverlays, invalidate = false)
         runCatching { map.onDetach() }
         super.onDestroy()
     }
@@ -401,8 +403,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun refreshStopMarkers() {
-        stopMarkers.forEach { map.overlays.remove(it) }
-        stopMarkers.clear()
+        detachAndClearMarkers(stopMarkers)
         val sel = selected
         val starredKeys = repo.prefs.starredStopKeys()
         // 다른 지역에서 대중교통 찾기를 해도 노선이 추가된 별표(★) 정류장·역은 항상 지도에 유지한다.
@@ -628,8 +629,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun infoText(s: String) = TextView(this).apply {
         text = s
+        textSize = 15.5f
         setPadding(8, 12, 8, 12)
-        setTextColor(0xFF444444.toInt())
+        setTextColor(0xFF334E68.toInt())
     }
 
     private fun hideSheet() {
@@ -882,10 +884,31 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun clearOverlays(list: MutableList<Overlay>) {
-        list.forEach { map.overlays.remove(it) }
+    private fun detachAndClearMarkers(list: MutableList<Marker>) {
+        if (list.isEmpty()) return
+        list.forEach { m ->
+            runCatching {
+                m.closeInfoWindow()
+                m.setOnMarkerClickListener(null)
+            }
+        }
+        map.overlays.removeAll(list.toSet())
         list.clear()
-        map.invalidate()
+    }
+
+    private fun clearOverlays(list: MutableList<Overlay>, invalidate: Boolean = true) {
+        if (list.isEmpty()) return
+        list.forEach { ov ->
+            if (ov is Marker) {
+                runCatching {
+                    ov.closeInfoWindow()
+                    ov.setOnMarkerClickListener(null)
+                }
+            }
+        }
+        map.overlays.removeAll(list.toSet())
+        list.clear()
+        if (invalidate) map.invalidate()
     }
 
     private fun hideKeyboard() {

@@ -35,7 +35,7 @@ object MarkerIcons {
     const val COLOR_STAR_GOLD = 0xFFFFD600.toInt()
     const val COLOR_STAR_STROKE = 0xFFE65100.toInt()
 
-    private val bitmapCache = object : LruCache<String, Bitmap>(4 * 1024 * 1024) {
+    private val bitmapCache = object : LruCache<String, Bitmap>(6 * 1024 * 1024) {
         override fun sizeOf(key: String, value: Bitmap): Int = value.allocationByteCount
     }
 
@@ -134,7 +134,7 @@ object MarkerIcons {
     fun subwayStation(ctx: Context, stationName: String, selected: Boolean = false, starred: Boolean = false): BitmapDrawable =
         cachedDrawable(ctx, "subwayStation|${stationName.take(20)}|$selected|$starred") {
             val d = ctx.resources.displayMetrics.density
-            val bodyH = (if (selected) 42f else 35f) * d
+            val bodyH = (if (selected) 44f else 37f) * d
             val tailH = (if (selected) 8f else 6f) * d
             val pad = (if (selected) 4f else 2.5f) * d
             val starHeader = (if (starred) 13f else 0f) * d
@@ -143,7 +143,7 @@ object MarkerIcons {
             val label = if (starred) "★ $baseLabel" else baseLabel
             val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = if (starred) COLOR_STAR_GOLD else Color.WHITE
-                textSize = (if (selected) 15f else 13.5f) * d
+                textSize = (if (selected) 16.5f else 15f) * d
                 typeface = Typeface.DEFAULT_BOLD
             }
             val textW = textPaint.measureText(label)
@@ -226,11 +226,11 @@ object MarkerIcons {
             val d = ctx.resources.displayMetrics.density
             val tp = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = Color.WHITE
-                textSize = 12f * d
+                textSize = 13.5f * d
                 typeface = Typeface.DEFAULT_BOLD
             }
-            val h = (28f * d).toInt()
-            val iconSpace = 20f * d
+            val h = (30f * d).toInt()
+            val iconSpace = 21f * d
             val w = (iconSpace + tp.measureText(text) + 14f * d).toInt().coerceAtLeast(h)
             val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
             val c = Canvas(bmp)
@@ -258,11 +258,11 @@ object MarkerIcons {
             val d = ctx.resources.displayMetrics.density
             val tp = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = Color.WHITE
-                textSize = 12.5f * d
+                textSize = 14f * d
                 typeface = Typeface.DEFAULT_BOLD
             }
-            val h = (29f * d).toInt()
-            val iconSpace = 20f * d
+            val h = (31f * d).toInt()
+            val iconSpace = 21f * d
             val w = (iconSpace + tp.measureText(label) + 14f * d).toInt().coerceAtLeast(h)
             val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
             val c = Canvas(bmp)

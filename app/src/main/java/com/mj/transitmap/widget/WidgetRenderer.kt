@@ -159,15 +159,16 @@ object WidgetRenderer {
 
             if (isUltraCompact) {
                 val padContainer = if (isNear) R.id.g_content else R.id.g_root
-                groupView.setViewPadding(padContainer, dp(6f), dp(3f), dp(6f), dp(3f))
-                groupView.setViewPadding(R.id.g_header, dp(7f), dp(2.5f), dp(7f), dp(2.5f))
-                groupView.setTextViewTextSize(R.id.g_title, TypedValue.COMPLEX_UNIT_SP, 13.5f)
-                groupView.setTextViewTextSize(R.id.g_meta, TypedValue.COMPLEX_UNIT_SP, 11.5f)
+                groupView.setViewPadding(padContainer, dp(6f), dp(3.5f), dp(6f), dp(3.5f))
+                groupView.setViewPadding(R.id.g_header, dp(7f), dp(3f), dp(7f), dp(3f))
+                groupView.setTextViewTextSize(R.id.g_title, TypedValue.COMPLEX_UNIT_SP, 15.5f)
+                groupView.setTextViewTextSize(R.id.g_meta, TypedValue.COMPLEX_UNIT_SP, 13.5f)
             } else if (isCompact) {
                 val padContainer = if (isNear) R.id.g_content else R.id.g_root
-                groupView.setViewPadding(padContainer, dp(7f), dp(4f), dp(7f), dp(4f))
-                groupView.setViewPadding(R.id.g_header, dp(8f), dp(3.5f), dp(8f), dp(3.5f))
-                groupView.setTextViewTextSize(R.id.g_title, TypedValue.COMPLEX_UNIT_SP, 14.5f)
+                groupView.setViewPadding(padContainer, dp(7f), dp(4.5f), dp(7f), dp(4.5f))
+                groupView.setViewPadding(R.id.g_header, dp(8f), dp(4f), dp(8f), dp(4f))
+                groupView.setTextViewTextSize(R.id.g_title, TypedValue.COMPLEX_UNIT_SP, 16.5f)
+                groupView.setTextViewTextSize(R.id.g_meta, TypedValue.COMPLEX_UNIT_SP, 14f)
             }
 
             val distStr = dist?.let { if (it >= 1000) "%.1fkm".format(it / 1000.0) else "${it}m" }
@@ -186,15 +187,15 @@ object WidgetRenderer {
             for (row in group.take(limit)) {
                 val itemView = RemoteViews(ctx.packageName, R.layout.widget_group_item)
                 if (isUltraCompact) {
-                    itemView.setViewPadding(R.id.gi_root, dp(5f), dp(2f), dp(5f), dp(2f))
-                    itemView.setTextViewTextSize(R.id.gi_badge, TypedValue.COMPLEX_UNIT_SP, 12.5f)
-                    itemView.setTextViewTextSize(R.id.gi_dir, TypedValue.COMPLEX_UNIT_SP, 12.5f)
-                    itemView.setTextViewTextSize(R.id.gi_main, TypedValue.COMPLEX_UNIT_SP, 13f)
+                    itemView.setViewPadding(R.id.gi_root, dp(6f), dp(2.5f), dp(6f), dp(2.5f))
+                    itemView.setTextViewTextSize(R.id.gi_badge, TypedValue.COMPLEX_UNIT_SP, 14.5f)
+                    itemView.setTextViewTextSize(R.id.gi_dir, TypedValue.COMPLEX_UNIT_SP, 14.5f)
+                    itemView.setTextViewTextSize(R.id.gi_main, TypedValue.COMPLEX_UNIT_SP, 15.5f)
                 } else if (isCompact) {
-                    itemView.setViewPadding(R.id.gi_root, dp(6f), dp(3f), dp(6f), dp(3f))
-                    itemView.setTextViewTextSize(R.id.gi_badge, TypedValue.COMPLEX_UNIT_SP, 13f)
-                    itemView.setTextViewTextSize(R.id.gi_dir, TypedValue.COMPLEX_UNIT_SP, 13f)
-                    itemView.setTextViewTextSize(R.id.gi_main, TypedValue.COMPLEX_UNIT_SP, 13.5f)
+                    itemView.setViewPadding(R.id.gi_root, dp(6.5f), dp(3.5f), dp(6.5f), dp(3.5f))
+                    itemView.setTextViewTextSize(R.id.gi_badge, TypedValue.COMPLEX_UNIT_SP, 15f)
+                    itemView.setTextViewTextSize(R.id.gi_dir, TypedValue.COMPLEX_UNIT_SP, 15f)
+                    itemView.setTextViewTextSize(R.id.gi_main, TypedValue.COMPLEX_UNIT_SP, 16f)
                 }
 
                 itemView.setTextViewText(R.id.gi_badge, row.badge)

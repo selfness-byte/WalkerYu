@@ -34,8 +34,11 @@ class TransitRepository(context: Context) {
         return r
     }
 
-    fun knownStationCoords(): Map<String, Pair<Double, Double>> =
-        prefs.knownStations() + StationDb.all(appContext).associate { it.id to (it.lat to it.lng) }
+    fun knownStationCoords(): Map<String, Pair<Double, Double>> {
+        val base = StationDb.coordsMap(appContext)
+        val extra = prefs.knownStations()
+        return if (extra.isEmpty()) base else base + extra
+    }
 
     suspend fun searchBusStops(keyword: String): LoadResult<List<Stop>> = when {
         sample -> SampleData.busStops(37.5035, 126.7660)

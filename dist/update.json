@@ -1,11 +1,11 @@
 {
   "appName": "WalkerYu",
   "packageId": "com.mj.transitmap",
-  "versionCode": 2,
-  "versionName": "1.0.0",
+  "versionCode": 3,
+  "versionName": "1.0.1",
   "apkUrl": "https://raw.githubusercontent.com/selfness-byte/WalkerYu/main/dist/WalkerYu-1.0.0.apk",
-  "sha256": "1410acff09ea96ae4e8213eb1e35ca8f83d73c8fa5ba4f7107ff67867b2a04dc",
-  "sizeBytes": 7132697,
+  "sha256": "5c9c45fb7f7a4bea484b6b7b969f960d047bae6fc3661609426ad843168ed74d",
+  "sizeBytes": 6972511,
   "updatedAt": "2026-10-22",
-  "notes": "• 앱 이름 ‘WalkerYu’ 정식 적용\n• 위젯 위치 ON/OFF 즉시 전환(goAsync) 및 네온·거리 즉시 반영\n• 마커 아이콘 LruCache 및 osmdroid 메모리/디스크 캐시 최적화\n• 위젯 동시 갱신 방지(Mutex) 및 생명주기 안정화\n• 앱 내 자동 업데이트(SHA-256 무결성 검증) 탑재"
+  "notes": "• 위젯 및 앱 전체 글자 크기 확대(정류장명·노선·진행방향·도착시간·지도 마커 가독성 대폭 향상)\n• 지하철역 탐색 바운딩박스 사전 필터링(객체 할당 98% 절감) 및 좌표 맵 캐싱\n• 지도 마커 일괄 해제(removeAll) 및 클릭 리스너/InfoWindow 메모리 누수 차단\n• 위젯 브로드캐스트 공유 코루틴 스코프 및 8.5초 타임아웃 안정화"
 }

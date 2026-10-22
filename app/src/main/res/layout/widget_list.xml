@@ -31,9 +31,9 @@
                 android:shadowDx="0"
                 android:shadowDy="1"
                 android:shadowRadius="2.5"
-                android:text="⭐ 교통 위젯"
+                android:text="⭐ WalkerYu"
                 android:textColor="#FFFFFF"
-                android:textSize="17sp"
+                android:textSize="19.5sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -48,7 +48,7 @@
                 android:shadowDy="1"
                 android:shadowRadius="2"
                 android:textColor="#B8C9DC"
-                android:textSize="12sp"
+                android:textSize="13.5sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -58,8 +58,8 @@
             android:layout_height="wrap_content"
             android:background="@drawable/widget_chip_off"
             android:gravity="center"
-            android:minHeight="36dp"
-            android:paddingHorizontal="12dp"
+            android:minHeight="38dp"
+            android:paddingHorizontal="13dp"
             android:paddingVertical="6dp"
             android:shadowColor="#CC000000"
             android:shadowDx="0"
@@ -67,7 +67,7 @@
             android:shadowRadius="2"
             android:text="○ 위치 OFF"
             android:textColor="#FFFFFF"
-            android:textSize="13.5sp"
+            android:textSize="15sp"
             android:textStyle="bold" />
 
         <TextView
@@ -77,8 +77,8 @@
             android:layout_marginStart="7dp"
             android:background="@drawable/widget_btn_refresh"
             android:gravity="center"
-            android:minHeight="36dp"
-            android:paddingHorizontal="12dp"
+            android:minHeight="38dp"
+            android:paddingHorizontal="13dp"
             android:paddingVertical="6dp"
             android:shadowColor="#CC000000"
             android:shadowDx="0"
@@ -86,7 +86,7 @@
             android:shadowRadius="2"
             android:text="↻ 새로고침"
             android:textColor="#FFFFFF"
-            android:textSize="13.5sp"
+            android:textSize="15sp"
             android:textStyle="bold" />
     </LinearLayout>
 
@@ -101,7 +101,7 @@
         android:shadowDy="1"
         android:shadowRadius="2"
         android:textColor="#FFD54F"
-        android:textSize="12sp"
+        android:textSize="13.5sp"
         android:textStyle="bold"
         android:visibility="gone" />
 

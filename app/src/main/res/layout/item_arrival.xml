@@ -22,15 +22,15 @@
             android:layout_height="wrap_content"
             android:background="@drawable/bg_badge"
             android:gravity="center"
-            android:minWidth="66dp"
-            android:paddingHorizontal="11dp"
-            android:paddingVertical="5.5dp"
+            android:minWidth="70dp"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="6dp"
             android:shadowColor="#99000000"
             android:shadowDx="0"
             android:shadowDy="1"
             android:shadowRadius="2"
             android:textColor="#FFFFFF"
-            android:textSize="16sp"
+            android:textSize="18sp"
             android:textStyle="bold" />
 
         <TextView
@@ -43,9 +43,9 @@
             android:ellipsize="end"
             android:maxLines="2"
             android:paddingHorizontal="11dp"
-            android:paddingVertical="5.5dp"
+            android:paddingVertical="6dp"
             android:textColor="#0D47A1"
-            android:textSize="15sp"
+            android:textSize="16.5sp"
             android:textStyle="bold" />
     </LinearLayout>
 
@@ -68,7 +68,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="#C62828"
-                android:textSize="18sp"
+                android:textSize="20sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -77,37 +77,37 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
                 android:textColor="#334E68"
-                android:textSize="13.5sp"
+                android:textSize="15sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnRoute"
             style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="112dp"
-            android:layout_height="40dp"
+            android:layout_width="118dp"
+            android:layout_height="42dp"
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:minWidth="0dp"
             android:paddingHorizontal="8dp"
             android:text="🗺 노선·방향"
-            android:textSize="13sp"
+            android:textSize="14.5sp"
             android:textStyle="bold"
-            app:cornerRadius="20dp" />
+            app:cornerRadius="21dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnAdd"
             style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="118dp"
-            android:layout_height="40dp"
+            android:layout_width="124dp"
+            android:layout_height="42dp"
             android:layout_marginStart="6dp"
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:minWidth="0dp"
             android:paddingHorizontal="8dp"
             android:text="★ 노선 추가"
-            android:textSize="13sp"
+            android:textSize="14.5sp"
             android:textStyle="bold"
-            app:cornerRadius="20dp" />
+            app:cornerRadius="21dp" />
     </LinearLayout>
 </LinearLayout>

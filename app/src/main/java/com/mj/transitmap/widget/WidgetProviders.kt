@@ -19,6 +19,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 abstract class BaseTransitWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
@@ -52,47 +53,39 @@ class WidgetActionReceiver : BroadcastReceiver() {
                 prefs.widgetUseLocation = !prefs.widgetUseLocation
                 WidgetRefreshJob.syncMinuteSchedule(appCtx)
                 WidgetUpdater.renderAll(appCtx, refreshing = true)
-                val pending = goAsync()
-                CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
-                    try {
-                        WidgetUpdater.refreshAll(appCtx)
-                    } finally {
-                        WidgetRefreshJob.syncMinuteSchedule(appCtx)
-                        pending.finish()
-                    }
-                }
+                runAsyncRefresh(appCtx)
             }
             ACTION_REFRESH -> {
                 WidgetRefreshJob.syncMinuteSchedule(appCtx)
                 WidgetUpdater.renderAll(appCtx, refreshing = true)
-                val pending = goAsync()
-                CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
-                    try {
-                        WidgetUpdater.refreshAll(appCtx)
-                    } finally {
-                        WidgetRefreshJob.syncMinuteSchedule(appCtx)
-                        pending.finish()
-                    }
-                }
+                runAsyncRefresh(appCtx)
             }
             ACTION_MINUTE_TICK -> {
                 if (AppPrefs(appCtx).widgetUseLocation && WidgetUpdater.hasWidgets(appCtx)) {
                     WidgetRefreshJob.syncMinuteSchedule(appCtx)
-                    val pending = goAsync()
-                    CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
-                        try {
-                            WidgetUpdater.refreshAll(appCtx)
-                        } finally {
-                            WidgetRefreshJob.syncMinuteSchedule(appCtx)
-                            pending.finish()
-                        }
-                    }
+                    runAsyncRefresh(appCtx)
                 }
             }
         }
     }
 
+    private fun runAsyncRefresh(appCtx: Context) {
+        val pending = goAsync()
+        receiverScope.launch {
+            try {
+                // BroadcastReceiver ANR(10초 제한) 방지를 위해 8.5초 타임아웃 적용
+                withTimeoutOrNull(8_500L) {
+                    WidgetUpdater.refreshAll(appCtx)
+                }
+            } finally {
+                WidgetRefreshJob.syncMinuteSchedule(appCtx)
+                runCatching { pending.finish() }
+            }
+        }
+    }
+
     companion object {
+        private val receiverScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         const val ACTION_TOGGLE_LOCATION = "com.mj.transitmap.widget.TOGGLE_LOCATION"
         const val ACTION_REFRESH = "com.mj.transitmap.widget.REFRESH"
         const val ACTION_MINUTE_TICK = "com.mj.transitmap.widget.MINUTE_TICK"
