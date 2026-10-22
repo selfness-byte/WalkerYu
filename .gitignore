@@ -1,0 +1,9 @@
+local.properties
+.gradle/
+.kotlin/
+build/
+*.apk
+!dist/WalkerYu-1.0.0.apk
+!dist/update.json
+._*
+.DS_Store

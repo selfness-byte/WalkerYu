@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 깜빡임 ON 주기: 바깥 화이트 네온 후광 1단계 -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent" />
+            <stroke
+                android:width="5dp"
+                android:color="#4DFFFFFF" />
+            <corners android:radius="14dp" />
+        </shape>
+    </item>
+    <!-- 바깥 화이트 네온 후광 2단계 -->
+    <item
+        android:bottom="1.2dp"
+        android:left="1.2dp"
+        android:right="1.2dp"
+        android:top="1.2dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent" />
+            <stroke
+                android:width="3.5dp"
+                android:color="#99FFFFFF" />
+            <corners android:radius="13dp" />
+        </shape>
+    </item>
+    <!-- 선명한 순백색(#FFFFFF) 3dp 테두리 -->
+    <item
+        android:bottom="2.5dp"
+        android:left="2.5dp"
+        android:right="2.5dp"
+        android:top="2.5dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#18FFFFFF" />
+            <stroke
+                android:width="3dp"
+                android:color="#FFFFFF" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+</layer-list>

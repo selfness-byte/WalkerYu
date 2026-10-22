@@ -1,0 +1,11 @@
+{
+  "appName": "WalkerYu",
+  "packageId": "com.mj.transitmap",
+  "versionCode": 2,
+  "versionName": "1.0.0",
+  "apkUrl": "https://raw.githubusercontent.com/selfness-byte/WalkerYu/main/dist/WalkerYu-1.0.0.apk",
+  "sha256": "6e588c801a2e586fc2ddceb4f3b1cb9b63f89b397c8091b0550559e3ba7696e5",
+  "sizeBytes": 6968031,
+  "updatedAt": "2026-10-22",
+  "notes": "• 앱 이름 ‘WalkerYu’ 정식 적용\n• 마커 아이콘 LruCache 및 osmdroid 메모리/디스크 캐시 최적화\n• 위젯 동시 갱신 방지(Mutex) 및 생명주기 안정화\n• 가까운 정류장 위젯 화이트 네온 점멸 효과 및 가독성 강화\n• 앱 내 자동 업데이트(SHA-256 무결성 검증) 탑재"
+}

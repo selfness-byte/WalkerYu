@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/gi_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="3dp"
+    android:background="@drawable/widget_item_row_bg"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingHorizontal="7dp"
+    android:paddingVertical="4.5dp">
+
+    <!-- 노선/호선 컬러 배지 -->
+    <TextView
+        android:id="@+id/gi_badge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:maxLines="1"
+        android:minWidth="52dp"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="3.5dp"
+        android:shadowColor="#DD000000"
+        android:shadowDx="0"
+        android:shadowDy="1"
+        android:shadowRadius="2.5"
+        android:textColor="#FFFFFF"
+        android:textSize="13.5sp"
+        android:textStyle="bold" />
+
+    <!-- 진행방향 (상행/하행/방면 고대비 컬러 + 또렷한 그림자) -->
+    <TextView
+        android:id="@+id/gi_dir"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="8dp"
+        android:layout_weight="1"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:shadowColor="#DD000000"
+        android:shadowDx="0"
+        android:shadowDy="1"
+        android:shadowRadius="2.5"
+        android:textColor="#64D8FF"
+        android:textSize="13.5sp"
+        android:textStyle="bold" />
+
+    <!-- 도착 시간 (우측 정렬 강조 + 또렷한 그림자) -->
+    <TextView
+        android:id="@+id/gi_main"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:gravity="end"
+        android:maxLines="1"
+        android:shadowColor="#DD000000"
+        android:shadowDx="0"
+        android:shadowDy="1"
+        android:shadowRadius="2.5"
+        android:textColor="#FFD600"
+        android:textSize="14.5sp"
+        android:textStyle="bold" />
+</LinearLayout>

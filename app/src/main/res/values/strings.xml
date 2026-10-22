@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WalkerYu</string>
+    <string name="widget_desc">WalkerYu 실시간 버스·지하철 도착 정보 위젯</string>
+</resources>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 깜빡임 OFF 주기: 흰색 후광을 완전히 꺼서 ON/OFF 깜빡임 대비가 확실하게 보이도록 함 -->
+    <item
+        android:bottom="2.5dp"
+        android:left="2.5dp"
+        android:right="2.5dp"
+        android:top="2.5dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent" />
+            <stroke
+                android:width="1dp"
+                android:color="#22FFFFFF" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+</layer-list>

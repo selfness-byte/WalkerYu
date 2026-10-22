@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/settingsRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F7FA"
+    android:orientation="vertical">
+
+    <!-- 상단바: 시스템 상태바와 겹치지 않는 전용 헤더바 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="#FFFFFF"
+        android:elevation="3dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="8dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnBackSettings"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="42dp"
+            android:minWidth="0dp"
+            android:paddingHorizontal="10dp"
+            android:text="← 뒤로"
+            android:textColor="#102A43"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1"
+            android:text="⚙ 앱 및 API 설정"
+            android:textColor="#102A43"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="경기도 버스 API 키 (공공데이터포털)"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/inputGbisKey"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="data.go.kr 일반 인증키 (Encoding/Decoding 모두 가능)"
+            android:importantForAutofill="no"
+            android:inputType="textPassword" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="서울 지하철 실시간 API 키"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/inputSubwayKey"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="비우면 공식 sample 키 (실데이터, 최대 5건)"
+            android:importantForAutofill="no"
+            android:inputType="textPassword" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnShowKeys"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="키 보기/숨기기" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="• 경기버스: 공공데이터포털 ‘경기도_정류소 조회/버스도착정보/노선/버스위치정보 조회’ 활용신청 후 받은 키\n• 서울 지하철: ‘서울시 지하철 실시간 도착정보’·‘실시간 열차 위치정보’ (실시간 지하철 인증키)\n• 키는 이 기기 안에만 저장되며 로그에 남기지 않습니다."
+            android:textColor="#666666"
+            android:textSize="12sp" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/swWidgetLocation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="위젯 위치 갱신 (가까운 탈 곳 순으로 정렬)" />
+
+        <TextView
+            android:id="@+id/permText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#666666"
+            android:textSize="12sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAppSettings"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="앱 권한 설정 열기" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/swSample"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="샘플 모드 (키 없이 화면 시연, 실제 정보 아님)" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSave"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="저장" />
+
+        <TextView
+            android:id="@+id/versionText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:textColor="#102A43"
+            android:textSize="13.5sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCheckUpdate"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="8dp"
+            android:text="🔄 최신 업데이트 확인 및 자동 설치"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="지도 © OpenStreetMap contributors · 지하철역 좌표: OpenStreetMap(Overpass API)\n버스: 경기도 버스정보(공공데이터포털) · 지하철: 서울 열린데이터광장\n위젯은 Android 제한으로 약 15분마다 자동 갱신되며, ⟳ 버튼으로 즉시 갱신할 수 있습니다."
+            android:textColor="#888888"
+            android:textSize="11sp" />
+    </LinearLayout>
+    </ScrollView>
+</LinearLayout>

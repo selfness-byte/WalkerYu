@@ -1,0 +1,10 @@
+SELECT DISTINCT ?item ?name ?coord WHERE {
+  SERVICE wikibase:box {
+    ?item wdt:P625 ?coord .
+    bd:serviceParam wikibase:cornerSouthWest "Point(126.30 36.80)"^^geo:wktLiteral .
+    bd:serviceParam wikibase:cornerNorthEast "Point(127.90 38.20)"^^geo:wktLiteral .
+  }
+  VALUES ?cls { wd:Q928830 wd:Q55488 wd:Q55678 }
+  ?item wdt:P31 ?cls .
+  ?item rdfs:label ?name . FILTER(LANG(?name) = "ko")
+}

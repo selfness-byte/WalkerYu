@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <org.osmdroid.views.MapView
+        android:id="@+id/map"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- 지도를 다른 위치로 이동했을 때 화면 정중앙 기준점을 보여주는 조준 아이콘 -->
+    <ImageView
+        android:id="@+id/centerTargetPin"
+        android:layout_width="38dp"
+        android:layout_height="38dp"
+        android:layout_gravity="center"
+        android:importantForAccessibility="no"
+        android:visibility="gone" />
+
+    <!-- 상단: 검색 + 균등 크기 필터 메뉴 + 이 위치 대중교통 찾기 배너 버튼 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:layout_marginHorizontal="12dp"
+        android:layout_marginTop="8dp"
+        android:orientation="vertical">
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="#FAFFFFFF"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="6dp"
+            app:strokeColor="#E0E6ED"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="10dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="8dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <EditText
+                        android:id="@+id/searchInput"
+                        android:layout_width="0dp"
+                        android:layout_height="46dp"
+                        android:layout_weight="1"
+                        android:background="@android:color/transparent"
+                        android:hint="🔍 정류장·지하철역 이름 검색"
+                        android:imeOptions="actionSearch"
+                        android:importantForAutofill="no"
+                        android:inputType="text"
+                        android:paddingHorizontal="4dp"
+                        android:singleLine="true"
+                        android:textColor="#1A202C"
+                        android:textColorHint="#718096"
+                        android:textSize="15sp" />
+
+                    <ImageButton
+                        android:id="@+id/btnSettings"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="설정"
+                        android:src="@android:drawable/ic_menu_preferences" />
+                </LinearLayout>
+
+                <!-- 상단 필터 메뉴 3개: 가로 폭 1:1:1 및 높이 42dp 로 균일하게 맞춤 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:weightSum="3">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipBus"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="0dp"
+                        android:layout_height="42dp"
+                        android:layout_marginEnd="4dp"
+                        android:layout_weight="1"
+                        android:checked="true"
+                        android:text="🚌 버스"
+                        android:textAlignment="center"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        app:chipMinTouchTargetSize="0dp"
+                        app:ensureMinTouchTargetSize="false" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipSubway"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="0dp"
+                        android:layout_height="42dp"
+                        android:layout_marginHorizontal="2dp"
+                        android:layout_weight="1"
+                        android:checked="true"
+                        android:text="🚇 지하철"
+                        android:textAlignment="center"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        app:chipMinTouchTargetSize="0dp"
+                        app:ensureMinTouchTargetSize="false" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipTrains"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="0dp"
+                        android:layout_height="42dp"
+                        android:layout_marginStart="4dp"
+                        android:layout_weight="1"
+                        android:checked="false"
+                        android:text="🚆 열차위치"
+                        android:textAlignment="center"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        app:chipMinTouchTargetSize="0dp"
+                        app:ensureMinTouchTargetSize="false" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- 지도를 다른 위치로 움직여 고정했을 때 상단 중앙에 즉시 나타나는 '이 위치 대중교통 찾기' 버튼 -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnFindTransitHere"
+            android:layout_width="wrap_content"
+            android:layout_height="46dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingHorizontal="20dp"
+            android:text="🚌🚇 이 위치 대중교통 찾기"
+            android:textColor="#FFFFFF"
+            android:textSize="14.5sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:backgroundTint="#0D47A1"
+            app:cornerRadius="23dp"
+            app:elevation="8dp"
+            app:strokeColor="#FFD600"
+            app:strokeWidth="2dp" />
+
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_status"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="9dp"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- 오른쪽 아래 플로팅 메뉴: 중복 '대중교통 찾기' 및 '고정 목적지' 제거, 깔끔하게 내 위치 이동만 배치 -->
+    <LinearLayout
+        android:id="@+id/fabColumn"
+        android:layout_width="156dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="14dp"
+        android:gravity="end"
+        android:orientation="vertical">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnClearRoute"
+            android:layout_width="match_parent"
+            android:layout_height="46dp"
+            android:layout_marginBottom="6dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingHorizontal="10dp"
+            android:text="✕ 노선 지우기"
+            android:textColor="#FFFFFF"
+            android:textSize="13.5sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:backgroundTint="#D32F2F"
+            app:cornerRadius="23dp"
+            app:elevation="6dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnMyLocation"
+            android:layout_width="match_parent"
+            android:layout_height="46dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingHorizontal="10dp"
+            android:text="📍 내 위치 이동"
+            android:textColor="#FFFFFF"
+            android:textSize="13.5sp"
+            android:textStyle="bold"
+            app:backgroundTint="#008952"
+            app:cornerRadius="23dp"
+            app:elevation="6dp" />
+    </LinearLayout>
+
+    <!-- 하단 도착정보 시트 카드 -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/sheet"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:visibility="gone"
+        app:cardBackgroundColor="#FFFFFF"
+        app:cardCornerRadius="22dp"
+        app:cardElevation="14dp"
+        app:strokeColor="#DCE3EA"
+        app:strokeWidth="1dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="14dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="16dp">
+
+            <!-- 상단 손잡이 바 -->
+            <View
+                android:layout_width="42dp"
+                android:layout_height="4dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="8dp"
+                android:background="#CFD8DC" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/sheetTypeIcon"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginEnd="10dp"
+                    android:importantForAccessibility="no" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/sheetTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#102A43"
+                        android:textSize="19sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/sheetSub"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#486581"
+                        android:textSize="12.5sp" />
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sheetClose"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:layout_marginStart="8dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:minWidth="0dp"
+                    android:paddingHorizontal="14dp"
+                    android:text="✕ 닫기"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="#D32F2F"
+                    app:cornerRadius="20dp"
+                    app:elevation="3dp" />
+            </LinearLayout>
+
+            <!-- 전체 노선 추가 / 새로고침 액션 바 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:weightSum="2">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sheetAddBundle"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="0dp"
+                    android:layout_height="38dp"
+                    android:layout_marginEnd="5dp"
+                    android:layout_weight="1"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="★ 전체 추가"
+                    android:textColor="#E65100"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="#FFF3E0"
+                    app:cornerRadius="19dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sheetRefresh"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="0dp"
+                    android:layout_height="38dp"
+                    android:layout_marginStart="5dp"
+                    android:layout_weight="1"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="↻ 도착정보 갱신"
+                    android:textColor="#0D47A1"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="#E3F2FD"
+                    app:cornerRadius="19dp" />
+            </LinearLayout>
+
+            <!-- 정류장/역 주요 진행방향 요약 배너 -->
+            <TextView
+                android:id="@+id/sheetDirBanner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_direction_pill"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="5dp"
+                android:textColor="#004D40"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="290dp"
+                android:layout_marginTop="6dp">
+
+                <LinearLayout
+                    android:id="@+id/sheetRows"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </ScrollView>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+</FrameLayout>

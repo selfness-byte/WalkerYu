@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.TransitMap" parent="Theme.Material3.Light">
+        <item name="colorPrimary">#1565C0</item>
+        <item name="colorSecondary">#2E9E44</item>
+    </style>
+
+    <style name="Theme.TransitMap.NoActionBar" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">#1565C0</item>
+        <item name="colorSecondary">#2E9E44</item>
+    </style>
+</resources>

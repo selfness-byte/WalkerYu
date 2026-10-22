@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/g_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginVertical="3.5dp"
+    android:background="@drawable/widget_group_card_base">
+
+    <!--
+      내 주변에 가까운 정류장/역 카드:
+      ViewFlipper(0.6초 간격 / 0.22초 빠른 전환)로
+      순백색(#FFFFFF) 네온 테두리가 눈에 확 띄게 깜빡인다.
+    -->
+    <ViewFlipper
+        android:id="@+id/g_neon_flipper"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@id/g_content"
+        android:layout_alignEnd="@id/g_content"
+        android:layout_alignStart="@id/g_content"
+        android:layout_alignTop="@id/g_content"
+        android:autoStart="true"
+        android:flipInterval="600"
+        android:inAnimation="@anim/neon_pulse_in"
+        android:outAnimation="@anim/neon_pulse_out">
+
+        <!-- 밝은 주기(ON): 선명한 3dp 순백색 테두리 + 화이트 네온 후광 -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/widget_group_neon" />
+
+        <!-- 어두운 주기(OFF): 후광을 꺼서 깜빡임이 또렷하게 보이도록 함 -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/widget_group_neon_dim" />
+    </ViewFlipper>
+
+    <!-- 실제 콘텐츠 레이어 -->
+    <LinearLayout
+        android:id="@+id/g_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="9dp"
+        android:paddingVertical="7dp">
+
+        <LinearLayout
+            android:id="@+id/g_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/widget_group_header_neon"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="9dp"
+            android:paddingVertical="5dp">
+
+            <TextView
+                android:id="@+id/g_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:shadowColor="#DD000000"
+                android:shadowDx="0"
+                android:shadowDy="1"
+                android:shadowRadius="3"
+                android:textColor="#FFFFFF"
+                android:textSize="15.5sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/g_meta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:shadowColor="#DD000000"
+                android:shadowDx="0"
+                android:shadowDy="1"
+                android:shadowRadius="2.5"
+                android:textColor="#FFFFFF"
+                android:textSize="12.5sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- 해당 정류장/역에 속한 노선·진행방향 리스트 -->
+        <LinearLayout
+            android:id="@+id/g_items"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:orientation="vertical" />
+    </LinearLayout>
+</RelativeLayout>
