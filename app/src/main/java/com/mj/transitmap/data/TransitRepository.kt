@@ -1,6 +1,7 @@
 package com.mj.transitmap.data
 
 import android.content.Context
+import android.util.LruCache
 
 /** 화면·위젯이 공통으로 쓰는 데이터 진입점. 샘플 모드/키 미설정을 여기서 처리한다. */
 class TransitRepository(context: Context) {
@@ -88,12 +89,26 @@ class TransitRepository(context: Context) {
     suspend fun routeStations(routeId: String): LoadResult<List<RouteStation>> = when {
         sample -> LoadResult.NoData("샘플 모드에서는 노선 위치를 제공하지 않습니다")
         prefs.gbisKey.isBlank() -> noBusKey
-        else -> gbis().routeStations(routeId)
+        else -> {
+            synchronized(routeStationsCache) { routeStationsCache.get(routeId) }?.let {
+                return LoadResult.Ok(it)
+            }
+            val res = gbis().routeStations(routeId)
+            if (res is LoadResult.Ok && res.value.isNotEmpty()) {
+                synchronized(routeStationsCache) { routeStationsCache.put(routeId, res.value) }
+            }
+            res
+        }
     }
 
     suspend fun busLocations(routeId: String): LoadResult<List<BusLocation>> = when {
         sample -> LoadResult.NoData("샘플 모드")
         prefs.gbisKey.isBlank() -> noBusKey
         else -> gbis().busLocations(routeId)
+    }
+
+    companion object {
+        /** 버스 노선별 경유 정류장 목록 메모리 캐시 (최대 24개 노선 보관 — 반복 네트워크 요청 및 메모리 할당 절감) */
+        private val routeStationsCache = LruCache<String, List<RouteStation>>(24)
     }
 }

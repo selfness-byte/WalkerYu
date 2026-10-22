@@ -1,11 +1,11 @@
 {
   "appName": "WalkerYu",
   "packageId": "com.mj.transitmap",
-  "versionCode": 3,
-  "versionName": "1.0.1",
+  "versionCode": 4,
+  "versionName": "1.0.2",
   "apkUrl": "https://raw.githubusercontent.com/selfness-byte/WalkerYu/main/dist/WalkerYu-1.0.0.apk",
-  "sha256": "5c9c45fb7f7a4bea484b6b7b969f960d047bae6fc3661609426ad843168ed74d",
-  "sizeBytes": 6972511,
+  "sha256": "f5e90da2259bdfef593a8822b746df15e403a7387efb9e0d5d4fe60088e04d9d",
+  "sizeBytes": 6980058,
   "updatedAt": "2026-10-22",
-  "notes": "• 위젯 및 앱 전체 글자 크기 확대(정류장명·노선·진행방향·도착시간·지도 마커 가독성 대폭 향상)\n• 지하철역 탐색 바운딩박스 사전 필터링(객체 할당 98% 절감) 및 좌표 맵 캐싱\n• 지도 마커 일괄 해제(removeAll) 및 클릭 리스너/InfoWindow 메모리 누수 차단\n• 위젯 브로드캐스트 공유 코루틴 스코프 및 8.5초 타임아웃 안정화"
+  "notes": "• 위젯 탑승 이동 감지: 내 위치와 버스·열차 실시간 위치를 비교해 탑승 판단 시 노선 줄 아래에 미니 노선 진행 바(● 현재역/정류장 ━━🚌/🚇━━▶ ◎ 다음역/정류장) 자동 표시\n• 버스 노선 정류장 LruCache 캐싱 및 지하철역 탐색 바운딩박스 최적화\n• 위젯 및 앱 전체 글자 크기 확대·가독성 강화"
 }

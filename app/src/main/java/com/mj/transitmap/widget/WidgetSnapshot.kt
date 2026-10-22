@@ -23,6 +23,10 @@ data class WidgetRow(
     val lng: Double = 0.0,
     /** 이 행의 실시간 값이 마지막으로 성공한 시각 (캐시 표시용) */
     val fetchedAt: Long = 0L,
+    /** 탑승 감지 시 기존 노선 행 아래에 표시할 미니 노선 진행 바 문구 (비어 있으면 미표시) */
+    val rideTrack: String = "",
+    /** 직전 주기에 매칭된 탑승 차량 번호판 또는 열차 번호 (연속 추적용) */
+    val rideVehicleId: String = "",
 ) {
     fun toJson(): JSONObject = JSONObject()
         .put("key", key).put("isBus", isBus).put("badge", badge).put("badgeColor", badgeColor)
@@ -30,6 +34,8 @@ data class WidgetRow(
         .put("status", status.name).put("distanceM", distanceM ?: -1)
         .put("stopId", stopId).put("stopName", stopName).put("lat", lat).put("lng", lng)
         .put("fetchedAt", fetchedAt)
+        .put("rideTrack", rideTrack)
+        .put("rideVehicleId", rideVehicleId)
 
     companion object {
         fun fromJson(o: JSONObject) = WidgetRow(
@@ -48,6 +54,8 @@ data class WidgetRow(
             lat = o.optDouble("lat", 0.0),
             lng = o.optDouble("lng", 0.0),
             fetchedAt = o.optLong("fetchedAt"),
+            rideTrack = o.optString("rideTrack"),
+            rideVehicleId = o.optString("rideVehicleId"),
         )
     }
 }

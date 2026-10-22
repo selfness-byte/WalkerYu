@@ -209,6 +209,15 @@ object WidgetRenderer {
                 itemView.setTextViewText(R.id.gi_main, mainText)
                 itemView.setTextColor(R.id.gi_main, mainColor)
 
+                // 탑승 감지 시 기존 노선 행 바로 밑에 방법 1 미니 노선 진행 바 표시 (위치 ON 일 때만)
+                val showRideTrack = locOn && row.rideTrack.isNotEmpty()
+                if (showRideTrack) {
+                    itemView.setTextViewText(R.id.gi_ride_track, row.rideTrack)
+                    itemView.setViewVisibility(R.id.gi_ride_track, View.VISIBLE)
+                } else {
+                    itemView.setViewVisibility(R.id.gi_ride_track, View.GONE)
+                }
+
                 itemView.setOnClickPendingIntent(R.id.gi_root, openAppIntent(ctx, row, reqSeq++))
                 groupView.addView(R.id.g_items, itemView)
                 totalShown++

@@ -5,59 +5,86 @@
     android:layout_height="wrap_content"
     android:layout_marginTop="3dp"
     android:background="@drawable/widget_item_row_bg"
-    android:gravity="center_vertical"
-    android:orientation="horizontal"
+    android:orientation="vertical"
     android:paddingHorizontal="7dp"
     android:paddingVertical="4.5dp">
 
-    <!-- 노선/호선 컬러 배지 -->
-    <TextView
-        android:id="@+id/gi_badge"
-        android:layout_width="wrap_content"
+    <!-- 1줄: 기존 노선/호선 배지 + 진행방향 + 도착 예정 시간 -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- 노선/호선 컬러 배지 -->
+        <TextView
+            android:id="@+id/gi_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:maxLines="1"
+            android:minWidth="56dp"
+            android:paddingHorizontal="9dp"
+            android:paddingVertical="4dp"
+            android:shadowColor="#DD000000"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="2.5"
+            android:textColor="#FFFFFF"
+            android:textSize="15.5sp"
+            android:textStyle="bold" />
+
+        <!-- 진행방향 (상행/하행/방면 고대비 컬러 + 또렷한 그림자) -->
+        <TextView
+            android:id="@+id/gi_dir"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="8dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:shadowColor="#DD000000"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="2.5"
+            android:textColor="#64D8FF"
+            android:textSize="15.5sp"
+            android:textStyle="bold" />
+
+        <!-- 도착 시간 (우측 정렬 강조 + 또렷한 그림자) -->
+        <TextView
+            android:id="@+id/gi_main"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:gravity="end"
+            android:maxLines="1"
+            android:shadowColor="#DD000000"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="2.5"
+            android:textColor="#FFD600"
+            android:textSize="16.5sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- 2줄(탑승 감지 시에만 기존 노선 바로 아래에 자동 표시): 방법 1 미니 노선 진행 바 -->
+    <TextView
+        android:id="@+id/gi_ride_track"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/widget_ride_track_bg"
+        android:ellipsize="end"
         android:maxLines="1"
-        android:minWidth="56dp"
-        android:paddingHorizontal="9dp"
+        android:paddingHorizontal="8dp"
         android:paddingVertical="4dp"
         android:shadowColor="#DD000000"
         android:shadowDx="0"
         android:shadowDy="1"
         android:shadowRadius="2.5"
-        android:textColor="#FFFFFF"
-        android:textSize="15.5sp"
-        android:textStyle="bold" />
-
-    <!-- 진행방향 (상행/하행/방면 고대비 컬러 + 또렷한 그림자) -->
-    <TextView
-        android:id="@+id/gi_dir"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="8dp"
-        android:layout_weight="1"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:shadowColor="#DD000000"
-        android:shadowDx="0"
-        android:shadowDy="1"
-        android:shadowRadius="2.5"
-        android:textColor="#64D8FF"
-        android:textSize="15.5sp"
-        android:textStyle="bold" />
-
-    <!-- 도착 시간 (우측 정렬 강조 + 또렷한 그림자) -->
-    <TextView
-        android:id="@+id/gi_main"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:ellipsize="end"
-        android:gravity="end"
-        android:maxLines="1"
-        android:shadowColor="#DD000000"
-        android:shadowDx="0"
-        android:shadowDy="1"
-        android:shadowRadius="2.5"
-        android:textColor="#FFD600"
-        android:textSize="16.5sp"
-        android:textStyle="bold" />
+        android:textColor="#E0F7FA"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
 </LinearLayout>

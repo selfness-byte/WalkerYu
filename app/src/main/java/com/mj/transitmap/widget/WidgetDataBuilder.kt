@@ -1,18 +1,24 @@
 package com.mj.transitmap.widget
 
 import android.content.Context
+import android.location.Location
 import com.mj.transitmap.data.Arrival
 import com.mj.transitmap.data.BoardItem
+import com.mj.transitmap.data.BusLocation
 import com.mj.transitmap.data.LoadResult
 import com.mj.transitmap.data.LocationHelper
 import com.mj.transitmap.data.OverpassApi
+import com.mj.transitmap.data.RouteStation
 import com.mj.transitmap.data.SeoulParser
+import com.mj.transitmap.data.StationDb
 import com.mj.transitmap.data.StopType
 import com.mj.transitmap.data.SubwayLines
+import com.mj.transitmap.data.TrainPosition
 import com.mj.transitmap.data.TransitRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlin.math.abs
 
 /**
  * 위젯에 보여줄 내용을 만든다.
@@ -54,7 +60,7 @@ class WidgetDataBuilder(private val context: Context) {
                 items.forEach { dist[it.key] = OverpassApi.distance(loc.latitude, loc.longitude, it.lat, it.lng) }
                 items = items.sortedBy { dist[it.key] ?: Int.MAX_VALUE }
             }
-            val rows = fetchRows(items.take(MAX_ROWS), dist, prevByKey, now)
+            val rows = fetchRows(items.take(MAX_ROWS), dist, prevByKey, loc, now)
             return WidgetSnapshot(
                 header = "⭐ 내 노선 (${rows.size}개)",
                 note = note.ifEmpty { if (prefs.sampleMode) "샘플 모드 — 실제 정보 아님" else "" },
@@ -83,19 +89,145 @@ class WidgetDataBuilder(private val context: Context) {
         items: List<BoardItem>,
         dist: Map<String, Int>,
         prev: Map<String, WidgetRow>,
+        loc: Location?,
         now: Long,
     ): List<WidgetRow> = coroutineScope {
         // 같은 정류장/역은 한 번만 조회
         val stops = items.map { it.type to it.stopId }.distinct()
-        val results = stops.map { (type, id) ->
+        val resultsDef = stops.map { (type, id) ->
             async {
                 (type to id) to if (type == StopType.BUS) repo.busArrivals(id) else repo.subwayArrivals(id)
             }
-        }.awaitAll().toMap()
+        }
+
+        // 위치 ON 상태일 때: 내 현재 위치와 운행 중인 버스·열차 위치를 비교해 탑승 이동 여부(방법 1 미니 노선 바)를 계산
+        val busRouteIds = if (loc != null) {
+            items.filter { it.type == StopType.BUS && it.lineId.isNotEmpty() }.map { it.lineId }.distinct()
+        } else emptyList()
+        val subwayLineIds = if (loc != null) {
+            items.filter { it.type == StopType.SUBWAY && it.lineId.isNotEmpty() }.map { it.lineId }.distinct()
+        } else emptyList()
+
+        val busRouteDef = busRouteIds.map { rid ->
+            async {
+                val st = (repo.routeStations(rid) as? LoadResult.Ok)?.value.orEmpty()
+                val bl = (repo.busLocations(rid) as? LoadResult.Ok)?.value.orEmpty()
+                rid to (st to bl)
+            }
+        }
+        val subwayPosDef = subwayLineIds.map { lid ->
+            async {
+                lid to (repo.trainPositions(lid) as? LoadResult.Ok)?.value.orEmpty()
+            }
+        }
+
+        val results = resultsDef.awaitAll().toMap()
+        val busRouteMap = busRouteDef.awaitAll().toMap()
+        val subwayPosMap = subwayPosDef.awaitAll().toMap()
+        val nearSubwayStations = if (loc != null && subwayLineIds.isNotEmpty()) {
+            StationDb.nearby(context, loc.latitude, loc.longitude, radiusM = 650)
+        } else emptyList()
 
         items.map { item ->
             val res = results[item.type to item.stopId]
-            rowFor(item, res, dist[item.key], prev[item.key], now)
+            val prevRow = prev[item.key]
+            val baseRow = rowFor(item, res, dist[item.key], prevRow, now)
+            if (loc == null) {
+                baseRow
+            } else {
+                val (track, vehicleId) = detectRideProgress(
+                    item = item,
+                    loc = loc,
+                    prevVehicleId = prevRow?.rideVehicleId.orEmpty(),
+                    busData = busRouteMap[item.lineId],
+                    subwayTrains = subwayPosMap[item.lineId].orEmpty(),
+                    nearSubwayStations = nearSubwayStations,
+                )
+                baseRow.copy(rideTrack = track, rideVehicleId = vehicleId)
+            }
+        }
+    }
+
+    /**
+     * 내 현재 위치(loc)와 실시간 운행 버스/열차 위치를 비교하여,
+     * 해당 노선에 탑승해 이동 중이라고 판단되면 기존 노선 행 아래에 표시할
+     * '방법 1 미니 노선 진행 바(● 현재/이전 ━━🚌/🚇━━▶ ◎ 다음 역)' 문구와 차량 ID를 반환한다.
+     */
+    private fun detectRideProgress(
+        item: BoardItem,
+        loc: Location,
+        prevVehicleId: String,
+        busData: Pair<List<RouteStation>, List<BusLocation>>?,
+        subwayTrains: List<TrainPosition>,
+        nearSubwayStations: List<com.mj.transitmap.data.Stop>,
+    ): Pair<String, String> {
+        if (item.type == StopType.BUS) {
+            val (stations, buses) = busData ?: return "" to ""
+            if (stations.isEmpty() || buses.isEmpty()) return "" to ""
+            val bySeq = stations.associateBy { it.seq }
+
+            // 1) 내 현재 위치에서 가장 가까운 노선 경유 정류장 찾기
+            var nearestSt: RouteStation? = null
+            var minDist = Int.MAX_VALUE
+            for (st in stations) {
+                val d = OverpassApi.distance(loc.latitude, loc.longitude, st.lat, st.lng)
+                if (d < minDist) {
+                    minDist = d
+                    nearestSt = st
+                }
+            }
+            val userSt = nearestSt ?: return "" to ""
+            // 노선 경로에서 400m 넘게 벗어나 있으면 미탑승
+            if (minDist > 400) return "" to ""
+
+            val savedStopSeq = item.dirKey.toIntOrNull()
+                ?: stations.firstOrNull { it.stationId == item.stopId }?.seq
+
+            // 2) 직전에 추적 중이던 버스(prevVehicleId)가 여전히 내 주변(±2 정류장)에 있으면 우선 유지,
+            //    없으면 내 현재 정류장 구간(±1 정류장)을 함께 지나고 있는 버스 차량 매칭
+            val matchedBus = buses.firstOrNull {
+                prevVehicleId.isNotEmpty() && it.plateNo == prevVehicleId && abs(it.seq - userSt.seq) <= 2
+            } ?: buses
+                .filter { b ->
+                    val nearUser = abs(b.seq - userSt.seq) <= 1 && minDist <= 300
+                    val afterBoardStop = savedStopSeq == null || b.seq >= savedStopSeq
+                    nearUser && afterBoardStop
+                }
+                .minByOrNull { abs(it.seq - userSt.seq) }
+                ?: return "" to ""
+
+            val currName = bySeq[matchedBus.seq]?.name ?: userSt.name
+            val nextName = bySeq[matchedBus.seq + 1]?.name ?: "종점"
+            val plateShort = matchedBus.plateNo.takeLast(4)
+            return "🟢 탑승이동($plateShort)  ● $currName ━━🚌━━▶ ◎ $nextName" to matchedBus.plateNo
+        } else {
+            if (subwayTrains.isEmpty()) return "" to ""
+            val nearNames = nearSubwayStations.map { OverpassApi.normalizeName(it.id) }.toSet()
+
+            // 방향 일치 여부 확인 (상행/내선 vs 하행/외선)
+            fun matchesDir(t: TrainPosition): Boolean {
+                if (item.dirKey.isEmpty()) return true
+                val k = item.dirKey.take(2)
+                return t.updn.contains(k) || k.contains(t.updn.take(2))
+            }
+
+            // 1) 직전에 매칭된 열차 번호(prevVehicleId)가 여전히 운행 중이고 내 근처 역이거나 지하 이동 중이면 유지
+            val continuedTrain = if (prevVehicleId.isNotEmpty()) {
+                subwayTrains.firstOrNull { it.trainNo == prevVehicleId && matchesDir(it) }
+            } else null
+
+            // 2) 내 현재 위치 주변 역(650m 이내)에 진입/도착/출발 중인 같은 방향 열차 매칭
+            val nearbyTrain = if (nearNames.isNotEmpty()) {
+                subwayTrains.firstOrNull { t ->
+                    matchesDir(t) && nearNames.contains(OverpassApi.normalizeName(t.stationName))
+                }
+            } else null
+
+            val matched = nearbyTrain ?: continuedTrain ?: return "" to ""
+            val currStation = matched.stationName
+            // 알려진 역 좌표 목록에서 진행방향의 다음 역 추정 (없으면 종착역 표시)
+            val nextLabel = "${matched.terminal}행 이동중"
+            return "🟢 탑승이동(${matched.trainNo}호)  ● ${currStation}(${matched.status}) ━━🚇━━▶ ◎ $nextLabel" to matched.trainNo
         }
     }
 
