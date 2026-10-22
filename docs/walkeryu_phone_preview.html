@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @keyframes neonPulse {
+      0%, 100% { box-shadow: 0 0 0 2px #00e5ff, 0 0 16px rgba(0, 229, 255, 0.55); }
+      50% { box-shadow: 0 0 0 2.5px #d500f9, 0 0 22px rgba(213, 0, 249, 0.65); }
+    }
+    .neon-active {
+      animation: neonPulse 1.8s infinite ease-in-out;
+    }
+    @keyframes movePulse {
+      0%, 100% { transform: translateX(0px); }
+      50% { transform: translateX(4px); }
+    }
+    .vehicle-moving {
+      display: inline-block;
+      animation: movePulse 1.1s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-transparent text-[var(--foreground)] antialiased p-2">
+  <div class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] rounded-2xl p-3.5 shadow-sm">
+    <!-- 상단 모드 전환 탭 + 컨트롤 바 -->
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2.5 border-b border-[var(--border)]">
+      <div class="flex items-center gap-1.5">
+        <span class="px-2 py-0.5 rounded-md bg-[var(--primary)] text-[var(--primary-foreground)] font-bold text-xs">WalkerYu v1.0.4</span>
+        <span class="font-semibold text-sm">가상 휴대폰 화면 시뮬레이터</span>
+      </div>
+      <div class="flex items-center gap-1">
+        <button id="tabWidget" onclick="switchScreen('widget')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--primary)] text-[var(--primary-foreground)] transition">① 홈 위젯 (탑승 이동 바)</button>
+        <button id="tabMap" onclick="switchScreen('map')" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--secondary)] text-[var(--secondary-foreground)] transition">② 지도 (★고정·✕닫기)</button>
+        <button id="tabUpdate" onclick="switchScreen('update')" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--secondary)] text-[var(--secondary-foreground)] transition">③ 버전 무관 업데이트</button>
+      </div>
+    </div>
+
+    <!-- 메인 2단 레이아웃: 좌측 가상 휴대폰 화면 / 우측 실시간 상태 시뮬레이션 버튼 -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
+      <!-- 좌측: 가상 안드로이드 휴대폰 프레임 (7칸) -->
+      <div class="md:col-span-7 rounded-2xl border-2 border-[var(--border)] p-3" style="background: #0b111e; color: #f8fafc;">
+        <!-- 휴대폰 상태바 -->
+        <div class="flex items-center justify-between text-xs px-1 mb-2" style="color: #94a3b8;">
+          <span id="phoneClock" class="font-semibold">23:47 · SKT 5G</span>
+          <div class="flex items-center gap-2">
+            <span id="gpsBadge" style="color: #4ade80;">📍 GPS 활성</span>
+            <span>🔋 92%</span>
+          </div>
+        </div>
+
+        <!-- [화면 1] 홈 화면 위젯 뷰 -->
+        <div id="screenWidget" class="space-y-2.5">
+          <!-- 안드로이드 위젯 본체 -->
+          <div id="widgetContainer" class="rounded-2xl p-3 transition-all duration-300 neon-active" style="background: #141c2b; border: 1.5px solid #26354d;">
+            <!-- 위젯 상단 헤더 -->
+            <div class="flex items-center justify-between gap-1 mb-2.5">
+              <div class="flex items-center gap-1.5 min-w-0">
+                <span class="font-extrabold text-sm truncate" style="color: #ffffff;">WalkerYu</span>
+                <span id="widgetSubStatus" class="text-xs truncate" style="color: #93c5fd;">· 🚇 7호선 탑승 이동중</span>
+              </div>
+              <div class="flex items-center gap-1 shrink-0">
+                <button id="locToggleBtn" onclick="toggleWidgetLoc()" class="px-2 py-0.5 rounded-full text-xs font-bold transition" style="background: #064e3b; color: #6ee7b7; border: 1px solid #10b981;">
+                  📍내위치(자동)
+                </button>
+                <button onclick="pulseRefresh()" class="px-2 py-0.5 rounded-md text-xs font-bold" style="background: #1e293b; color: #e2e8f0;">⟳</button>
+                <button onclick="switchScreen('update')" class="px-2 py-0.5 rounded-md text-xs font-bold" style="background: #1e293b; color: #e2e8f0;">⚙</button>
+              </div>
+            </div>
+
+            <!-- 그룹 1: 지하철역 (탑승 이동 바 활성) -->
+            <div id="cardSubway" class="rounded-xl p-2.5 mb-2 transition-all" style="background: #192436; border: 1.5px solid #00e5ff;">
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-1.5">
+                  <span class="px-1.5 py-0.5 rounded text-xs font-extrabold" style="background: #1d4ed8; color: #fff;">지하철</span>
+                  <span id="stopName1" class="font-extrabold text-sm" style="color: #ffffff;">★ 부천시청역</span>
+                </div>
+                <span id="stopDist1" class="text-xs font-semibold" style="color: #67e8f9;">내 위치 일치 · 탑승중</span>
+              </div>
+
+              <!-- 기존 노선 행 -->
+              <div class="rounded-lg p-2" style="background: #101826;">
+                <div class="flex items-center justify-between gap-1">
+                  <div class="flex items-center gap-1.5 min-w-0">
+                    <span class="px-2 py-0.5 rounded text-xs font-extrabold shrink-0" style="background: #54640d; color: #fff;">7호선</span>
+                    <span id="lineDir1" class="text-xs font-bold truncate" style="color: #cbd5e1;">▲ 상행 · 석남행</span>
+                  </div>
+                  <span id="etaText1" class="text-xs font-extrabold shrink-0" style="color: #00e5ff;">탑승 이동중</span>
+                </div>
+
+                <!-- ★ 방법 1: 기존 노선 바로 아래에 나타나는 탑승 이동 노선 바 (gi_ride_track) -->
+                <div id="rideTrackSubway" class="mt-2 rounded-lg p-2 transition-all" style="background: #0d2238; border: 1px solid #00b4d8;">
+                  <div class="flex items-center justify-between text-xs font-extrabold mb-1" style="color: #e0f2fe;">
+                    <span id="rideCurNode1">● 부천시청</span>
+                    <span id="rideMidTrack1" class="vehicle-moving" style="color: #00e5ff;">━━🚇━━▶</span>
+                    <span id="rideNextNode1" style="color: #fde047;">◎ 상동</span>
+                  </div>
+                  <div class="flex items-center justify-between text-xs" style="color: #7dd3fc;">
+                    <span id="rideStatus1">🚇 7호선 열차와 함께 이동 중 (오차 18m)</span>
+                    <span id="rideRemain1" class="font-bold">다음역 약 1분</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 그룹 2: 버스정류장 -->
+            <div id="cardBus" class="rounded-xl p-2.5 transition-all" style="background: #192436; border: 1px solid #2b3b54;">
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-1.5">
+                  <span class="px-1.5 py-0.5 rounded text-xs font-extrabold" style="background: #047857; color: #fff;">버스</span>
+                  <span class="font-extrabold text-sm" style="color: #ffffff;">★ 부천시청역.소풍</span>
+                </div>
+                <span id="stopDist2" class="text-xs font-semibold" style="color: #94a3b8;">120m</span>
+              </div>
+
+              <div class="rounded-lg p-2" style="background: #101826;">
+                <div class="flex items-center justify-between gap-1">
+                  <div class="flex items-center gap-1.5 min-w-0">
+                    <span class="px-2 py-0.5 rounded text-xs font-extrabold shrink-0" style="background: #059669; color: #fff;">70-2</span>
+                    <span class="text-xs font-bold truncate" style="color: #cbd5e1;">➔ 부천역북부 방면</span>
+                  </div>
+                  <span id="etaText2" class="text-xs font-extrabold shrink-0" style="color: #fbbf24;">3분 (2정거장)</span>
+                </div>
+
+                <!-- 버스 탑승 시 나타나는 미니 노선 바 (기본 숨김, 버스 탑승 모드 시 표시) -->
+                <div id="rideTrackBus" class="hidden mt-2 rounded-lg p-2 transition-all" style="background: #0c2924; border: 1px solid #10b981;">
+                  <div class="flex items-center justify-between text-xs font-extrabold mb-1" style="color: #d1fae5;">
+                    <span id="busCurNode">● 소풍터미널</span>
+                    <span class="vehicle-moving" style="color: #34d399;">━━🚌━━▶</span>
+                    <span id="busNextNode" style="color: #fde047;">◎ 꿈마을사거리</span>
+                  </div>
+                  <div class="flex items-center justify-between text-xs" style="color: #6ee7b7;">
+                    <span id="busRideStatus">🚌 경기72바1042 버스와 위치 일치 · 이동 중</span>
+                    <span class="font-bold">잔여 19석</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- [화면 2] 앱 지도 화면 (별표 고정 유지 & 뚜렷한 ✕ 닫기 버튼) -->
+        <div id="screenMap" class="hidden space-y-2">
+          <div class="rounded-xl p-2.5 relative overflow-hidden" style="background: #1e293b; min-height: 255px;">
+            <!-- 상단 검색바 -->
+            <div class="flex items-center justify-between gap-1.5 rounded-lg px-2.5 py-1.5 mb-2" style="background: #0f172a; border: 1px solid #334155;">
+              <span class="text-xs font-semibold" style="color: #e2e8f0;">🔍 역·정류장 검색 (별표 ★ 노선 다른 지역 이동 시에도 상시 표시)</span>
+            </div>
+
+            <!-- 가상 지도 마커 영역 -->
+            <div class="relative rounded-lg p-3 my-1 flex flex-col justify-between" style="background: #17253b; height: 110px; border: 1px dashed #3b82f6;">
+              <div class="flex items-center justify-between">
+                <span class="px-2 py-0.5 rounded-full text-xs font-extrabold shadow" style="background: #f59e0b; color: #111827;">★ 부천시청역 (고정 유지됨)</span>
+                <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background: #0284c7; color: #fff;">🚌 일반 정류장</span>
+              </div>
+              <div class="flex items-center justify-center">
+                <span class="px-3 py-1 rounded-full text-xs font-extrabold shadow" style="background: #2563eb; color: #ffffff;">🚌🚇 이 위치 대중교통 찾기</span>
+              </div>
+            </div>
+
+            <!-- 하단 시트: 눈에 확 띄는 빨간 원형 ✕ 닫기 버튼 -->
+            <div class="rounded-xl p-2.5 mt-1" style="background: #0f172a; border: 1.5px solid #475569;">
+              <div class="flex items-center justify-between mb-1.5">
+                <div>
+                  <div class="font-extrabold text-sm" style="color: #ffffff;">⭐ 부천시청역 (7호선)</div>
+                  <div class="text-xs" style="color: #94a3b8;">★ 위젯 노선 등록됨 · 기준점에서 85m</div>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="px-2 py-1 rounded-md text-xs font-bold" style="background: #1e293b; color: #93c5fd;">⭐ 전체 해제</span>
+                  <button onclick="switchScreen('widget')" title="뚜렷한 닫기 버튼" class="w-8 h-8 rounded-full flex items-center justify-center font-extrabold text-sm shadow" style="background: #ffebee; color: #c62828; border: 2px solid #ef5350;">✕</button>
+                </div>
+              </div>
+              <div class="text-xs px-2 py-1 rounded" style="background: #1e293b; color: #cbd5e1;">
+                우측 상단 <b>빨간 테두리 원형 ✕ 버튼(40dp)</b>으로 시트를 한눈에 닫을 수 있습니다.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- [화면 3] 버전 무관 원클릭 자동 업데이트 화면 -->
+        <div id="screenUpdate" class="hidden space-y-2">
+          <div class="rounded-xl p-3" style="background: #141c2b; border: 1.5px solid #38bdf8;">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="font-extrabold text-sm" style="color: #ffffff;">🔄 최신 버전 설치 (v1.0.3)</span>
+              <span class="px-2 py-0.5 rounded text-xs font-bold" style="background: #0284c7; color: #fff;">Build 5</span>
+            </div>
+            <p class="text-xs mb-2" style="color: #cbd5e1;">
+              현재 버전: <b>v1.0.3 (build 5)</b> · OS PackageManager 실시간 조회<br/>
+              <span style="color: #7dd3fc;">(이전 버전에 상관없이 언제든 최신 파일로 덮어써서 업데이트할 수 있습니다)</span>
+            </p>
+            <div class="rounded-lg p-2 mb-2.5 text-xs" style="background: #0f172a; color: #e2e8f0;">
+              <div id="dlStatusText" class="font-bold mb-1">다운로드 준비 완료 (`WalkerYu-1.0.3.apk`)</div>
+              <div class="w-full h-2.5 rounded-full overflow-hidden" style="background: #1e293b;">
+                <div id="dlProgressBar" class="h-full transition-all duration-300" style="width: 100%; background: linear-gradient(90deg, #00b4d8, #3b82f6);"></div>
+              </div>
+            </div>
+            <div class="flex items-center justify-end gap-1.5">
+              <button onclick="simulateDownload()" class="px-3 py-1.5 rounded-lg text-xs font-extrabold" style="background: #0284c7; color: #ffffff;">지금 업데이트 시연 ▶</button>
+              <button onclick="switchScreen('widget')" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold" style="background: #334155; color: #e2e8f0;">위젯으로</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 우측: 시나리오 조작 패널 (5칸) -->
+      <div class="md:col-span-5 flex flex-col justify-between space-y-2.5">
+        <div class="rounded-xl p-3 border border-[var(--border)] bg-[var(--background)]">
+          <div class="font-bold text-xs mb-2 text-[var(--foreground)]">🎮 위젯 탑승 상태 직접 눌러보기 (방법 1)</div>
+          <div class="grid grid-cols-1 gap-1.5">
+            <button onclick="setScenario('subwayRide')" id="btnScenSubway" class="text-left px-2.5 py-1.5 rounded-lg text-xs font-bold bg-[var(--primary)] text-[var(--primary-foreground)] transition">
+              🚇 1. 지하철 탑승 이동 중 (노선 밑 진행 바 표시)
+            </button>
+            <button onclick="setScenario('busRide')" id="btnScenBus" class="text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-[var(--secondary)] text-[var(--secondary-foreground)] transition">
+              🚌 2. 버스 탑승 이동 중 (버스 위치 일치 추적)
+            </button>
+            <button onclick="setScenario('waiting')" id="btnScenWait" class="text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-[var(--secondary)] text-[var(--secondary-foreground)] transition">
+              🚏 3. 탑승 전 정류장 대기 (기존 노선만 깔끔 표시)
+            </button>
+            <button onclick="advanceStation()" class="text-left px-2.5 py-1.5 rounded-lg text-xs font-bold border border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] hover:opacity-90 transition">
+              ⏩ 다음 역/정류장으로 내 위치 이동시키기
+            </button>
+          </div>
+        </div>
+
+        <div class="rounded-xl p-3 border border-[var(--border)] bg-[var(--background)] text-xs space-y-1">
+          <div class="font-bold text-[var(--foreground)]" id="explainTitle">💡 작동 원리 요약</div>
+          <p class="text-[var(--muted-foreground)] leading-relaxed" id="explainDesc">
+            위젯 갱신 시 <b>내 GPS 위치</b>와 실시간 <b>열차·버스 좌표</b>를 비교해 280m 이내에서 함께 이동 중이면, 해당 노선 바로 아래에 <b>● 현재역 ━━🚇/🚌━━▶ ◎ 다음역</b> 미니 진행 바가 자동으로 펼쳐집니다.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const subwayStops = [
+      { cur: '부천시청', next: '상동', remain: '다음역 약 1분' },
+      { cur: '상동', next: '삼산체육관', remain: '다음역 약 2분' },
+      { cur: '삼산체육관', next: '굴포천', remain: '다음역 약 1분' },
+      { cur: '굴포천', next: '부평구청', remain: '환승역 접근중' }
+    ];
+    const busStops = [
+      { cur: '소풍터미널', next: '꿈마을사거리' },
+      { cur: '꿈마을사거리', next: '미리내마을' },
+      { cur: '미리내마을', next: '신중동역' },
+      { cur: '신중동역', next: '춘의역' }
+    ];
+    let stepIdx = 0;
+    let currentScenario = 'subwayRide';
+    let locOn = true;
+
+    function switchScreen(mode) {
+      document.getElementById('screenWidget').classList.toggle('hidden', mode !== 'widget');
+      document.getElementById('screenMap').classList.toggle('hidden', mode !== 'map');
+      document.getElementById('screenUpdate').classList.toggle('hidden', mode !== 'update');
+
+      const activeCls = 'px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--primary)] text-[var(--primary-foreground)] transition';
+      const idleCls = 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--secondary)] text-[var(--secondary-foreground)] transition';
+      document.getElementById('tabWidget').className = mode === 'widget' ? activeCls : idleCls;
+      document.getElementById('tabMap').className = mode === 'map' ? activeCls : idleCls;
+      document.getElementById('tabUpdate').className = mode === 'update' ? activeCls : idleCls;
+    }
+
+    function setScenario(scen) {
+      switchScreen('widget');
+      currentScenario = scen;
+      const trackSub = document.getElementById('rideTrackSubway');
+      const trackBus = document.getElementById('rideTrackBus');
+      const cardSub = document.getElementById('cardSubway');
+      const cardBus = document.getElementById('cardBus');
+      const subStatus = document.getElementById('widgetSubStatus');
+
+      const activeBtn = 'text-left px-2.5 py-1.5 rounded-lg text-xs font-bold bg-[var(--primary)] text-[var(--primary-foreground)] transition';
+      const idleBtn = 'text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-[var(--secondary)] text-[var(--secondary-foreground)] transition';
+      document.getElementById('btnScenSubway').className = scen === 'subwayRide' ? activeBtn : idleBtn;
+      document.getElementById('btnScenBus').className = scen === 'busRide' ? activeBtn : idleBtn;
+      document.getElementById('btnScenWait').className = scen === 'waiting' ? activeBtn : idleBtn;
+
+      if (scen === 'subwayRide') {
+        trackSub.classList.remove('hidden');
+        trackBus.classList.add('hidden');
+        cardSub.style.border = '1.5px solid #00e5ff';
+        cardBus.style.border = '1px solid #2b3b54';
+        document.getElementById('etaText1').textContent = '탑승 이동중';
+        document.getElementById('stopDist1').textContent = '내 위치 일치 · 탑승중';
+        subStatus.textContent = '· 🚇 7호선 탑승 이동중';
+        document.getElementById('explainTitle').textContent = '🚇 지하철 탑승 감지 상태';
+        document.getElementById('explainDesc').innerHTML = '내 GPS 위치가 실시간 7호선 열차 위치와 함께 이동 중으로 판단되어, <b>7호선 노선 바로 밑</b>에 현재역(●)과 다음역(◎) 진행 바가 표시됩니다.';
+      } else if (scen === 'busRide') {
+        trackSub.classList.add('hidden');
+        trackBus.classList.remove('hidden');
+        cardSub.style.border = '1px solid #2b3b54';
+        cardBus.style.border = '1.5px solid #10b981';
+        document.getElementById('etaText1').textContent = '5분 후 도착';
+        document.getElementById('stopDist1').textContent = '310m';
+        document.getElementById('etaText2').textContent = '탑승 이동중';
+        document.getElementById('stopDist2').textContent = '내 위치 일치 · 탑승중';
+        subStatus.textContent = '· 🚌 70-2번 버스 탑승중';
+        document.getElementById('explainTitle').textContent = '🚌 버스 탑승 감지 상태';
+        document.getElementById('explainDesc').innerHTML = '내 위치가 <b>70-2번 운행 버스(경기72바1042)</b>의 실시간 정류장 순번 좌표와 일치하여, 노선 아래에 버스 이동 진행 바가 자동으로 펼쳐집니다.';
+      } else {
+        trackSub.classList.add('hidden');
+        trackBus.classList.add('hidden');
+        cardSub.style.border = '1px solid #2b3b54';
+        cardBus.style.border = '1px solid #2b3b54';
+        document.getElementById('etaText1').textContent = '곧 도착 (전역 출발)';
+        document.getElementById('stopDist1').textContent = '85m';
+        document.getElementById('etaText2').textContent = '3분 (2정거장)';
+        document.getElementById('stopDist2').textContent = '120m';
+        subStatus.textContent = '· 가까운 정류장 도착 안내';
+        document.getElementById('explainTitle').textContent = '🚏 탑승 전 대기 상태';
+        document.getElementById('explainDesc').innerHTML = '아직 열차나 버스에 탑승하지 않았을 때는 하단 진행 바를 숨겨 위젯 공간을 깔끔하게 유지하고 도착 예정 시간만 크게 보여줍니다.';
+      }
+    }
+
+    function advanceStation() {
+      switchScreen('widget');
+      if (currentScenario === 'waiting') setScenario('subwayRide');
+      stepIdx = (stepIdx + 1) % subwayStops.length;
+      const s = subwayStops[stepIdx];
+      document.getElementById('rideCurNode1').textContent = '● ' + s.cur;
+      document.getElementById('rideNextNode1').textContent = '◎ ' + s.next;
+      document.getElementById('rideRemain1').textContent = s.remain;
+      document.getElementById('stopName1').textContent = '★ ' + s.cur + '역';
+
+      const b = busStops[stepIdx % busStops.length];
+      document.getElementById('busCurNode').textContent = '● ' + b.cur;
+      document.getElementById('busNextNode').textContent = '◎ ' + b.next;
+    }
+
+    function toggleWidgetLoc() {
+      locOn = !locOn;
+      const btn = document.getElementById('locToggleBtn');
+      const gps = document.getElementById('gpsBadge');
+      if (locOn) {
+        btn.textContent = '📍내위치(자동)';
+        btn.style.background = '#064e3b';
+        btn.style.color = '#6ee7b7';
+        btn.style.border = '1px solid #10b981';
+        gps.textContent = '📍 GPS 활성';
+        gps.style.color = '#4ade80';
+      } else {
+        btn.textContent = '☆고정순(위치꺼짐)';
+        btn.style.background = '#1e293b';
+        btn.style.color = '#94a3b8';
+        btn.style.border = '1px solid #475569';
+        gps.textContent = '☆ 고정순 모드';
+        gps.style.color = '#94a3b8';
+      }
+    }
+
+    function pulseRefresh() {
+      const sub = document.getElementById('widgetSubStatus');
+      const prev = sub.textContent;
+      sub.textContent = '· ⟳ 실시간 위치·노선 갱신 완료!';
+      setTimeout(() => { sub.textContent = prev; }, 1000);
+    }
+
+    function simulateDownload() {
+      const bar = document.getElementById('dlProgressBar');
+      const txt = document.getElementById('dlStatusText');
+      bar.style.width = '15%';
+      txt.textContent = '다운로드 중… 15% (1,047KB / 6,817KB)';
+      setTimeout(() => {
+        bar.style.width = '65%';
+        txt.textContent = '다운로드 중… 65% (4,431KB / 6,817KB)';
+      }, 350);
+      setTimeout(() => {
+        bar.style.width = '100%';
+        txt.textContent = '✅ APK 검증 완료 → Android 패키지 설치 화면 즉시 실행!';
+      }, 750);
+    }
+  </script>
+</body>
+</html>

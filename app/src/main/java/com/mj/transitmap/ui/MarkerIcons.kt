@@ -35,7 +35,9 @@ object MarkerIcons {
     const val COLOR_STAR_GOLD = 0xFFFFD600.toInt()
     const val COLOR_STAR_STROKE = 0xFFE65100.toInt()
 
-    private val bitmapCache = object : LruCache<String, Bitmap>(6 * 1024 * 1024) {
+    private const val MAX_CACHE_BYTES = 4 * 1024 * 1024
+
+    private val bitmapCache = object : LruCache<String, Bitmap>(MAX_CACHE_BYTES) {
         override fun sizeOf(key: String, value: Bitmap): Int = value.allocationByteCount
     }
 
@@ -49,9 +51,13 @@ object MarkerIcons {
         return BitmapDrawable(ctx.resources, bmp)
     }
 
-    fun trimMemory() {
+    fun trimMemory(keepHalf: Boolean = false) {
         synchronized(bitmapCache) {
-            bitmapCache.evictAll()
+            if (keepHalf) {
+                bitmapCache.trimToSize(MAX_CACHE_BYTES / 2)
+            } else {
+                bitmapCache.evictAll()
+            }
         }
     }
 

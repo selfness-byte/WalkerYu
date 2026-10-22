@@ -20,7 +20,7 @@
         android:layout_alignStart="@id/g_content"
         android:layout_alignTop="@id/g_content"
         android:autoStart="true"
-        android:flipInterval="600"
+        android:flipInterval="1200"
         android:inAnimation="@anim/neon_pulse_in"
         android:outAnimation="@anim/neon_pulse_out">
 

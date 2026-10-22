@@ -17,11 +17,11 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** 3가지 창 모드: 추가한 모든 노선이 잘리지 않고 그대로 다 보이도록 충분한 최대치를 허용한다 */
+/** 3가지 창 모드: Binder IPC(1MB 한도) 초과를 방지하면서도 추가한 노선이 충분히 보이도록 상한을 설정한다 */
 enum class WidgetMode(val maxGroups: Int, val maxItemsPerGroup: Int, val maxTotalItems: Int) {
-    SMALL(maxGroups = 8, maxItemsPerGroup = 8, maxTotalItems = 8),
-    MEDIUM(maxGroups = 20, maxItemsPerGroup = 20, maxTotalItems = 25),
-    LARGE(maxGroups = 25, maxItemsPerGroup = 25, maxTotalItems = 30),
+    SMALL(maxGroups = 6, maxItemsPerGroup = 6, maxTotalItems = 6),
+    MEDIUM(maxGroups = 12, maxItemsPerGroup = 10, maxTotalItems = 14),
+    LARGE(maxGroups = 15, maxItemsPerGroup = 12, maxTotalItems = 18),
 }
 
 object WidgetRenderer {
@@ -57,8 +57,12 @@ object WidgetRenderer {
 
     /**
      * 위젯 행 우측의 도착정보 문구를 간결하게 다듬어 진행방향(gi_dir)이 잘리지 않고 한눈에 읽히도록 한다.
+     * 현재 탑승 이동 중인 노선은 '탑승 이동중'으로 강조 표시한다.
      */
-    private fun compactArrival(row: WidgetRow): Pair<String, Int> {
+    private fun compactArrival(row: WidgetRow, isRiding: Boolean): Pair<String, Int> {
+        if (isRiding) {
+            return "탑승 이동중" to 0xFF00E5FF.toInt()
+        }
         val raw = row.main.trim()
         if (row.status == RowStatus.NO_DATA || raw.contains("정보 없음")) {
             return "운행대기/없음" to 0xFF90A4AE.toInt()
@@ -151,9 +155,10 @@ object WidgetRenderer {
             if (totalShown >= mode.maxTotalItems) break
             val first = group.first()
             val dist = if (locOn) first.distanceM else null
-            val isNear = locOn && dist != null && (dist <= NEON_DISTANCE_M || (dist == nearestDist && dist <= NEON_NEAREST_MAX_M))
+            val hasActiveRide = locOn && group.any { it.rideTrack.isNotEmpty() }
+            val isNear = hasActiveRide || (locOn && dist != null && (dist <= NEON_DISTANCE_M || (dist == nearestDist && dist <= NEON_NEAREST_MAX_M)))
 
-            // 내 위치와 가까운 정류장/역은 천천히 깜빡이는 흰색 테두리 레이아웃(widget_group_neon_card)으로 렌더링
+            // 내 위치와 가까운 정류장/역 또는 현재 탑승 이동 중인 카드는 깜빡이는 흰색 테두리 레이아웃(widget_group_neon_card)으로 렌더링
             val groupLayout = if (isNear) R.layout.widget_group_neon_card else R.layout.widget_group
             val groupView = RemoteViews(ctx.packageName, groupLayout)
 
@@ -174,6 +179,7 @@ object WidgetRenderer {
             val distStr = dist?.let { if (it >= 1000) "%.1fkm".format(it / 1000.0) else "${it}m" }
             val titleText = first.title
             val metaText = when {
+                hasActiveRide -> "🟢 내 위치 일치 · 탑승중"
                 isNear && distStr != null -> "✦ 내 주변 $distStr"
                 distStr != null -> distStr
                 else -> "${group.size}개 노선"
@@ -205,17 +211,23 @@ object WidgetRenderer {
                 itemView.setTextViewText(R.id.gi_dir, dirText)
                 itemView.setTextColor(R.id.gi_dir, dirColor)
 
-                val (mainText, mainColor) = compactArrival(row)
+                // 탑승 감지 시 기존 노선 행 바로 밑에 방법 1 미니 노선 진행 바(2단) 표시
+                val showRideTrack = locOn && row.rideTrack.isNotEmpty()
+                val (mainText, mainColor) = compactArrival(row, isRiding = showRideTrack)
                 itemView.setTextViewText(R.id.gi_main, mainText)
                 itemView.setTextColor(R.id.gi_main, mainColor)
 
-                // 탑승 감지 시 기존 노선 행 바로 밑에 방법 1 미니 노선 진행 바 표시 (위치 ON 일 때만)
-                val showRideTrack = locOn && row.rideTrack.isNotEmpty()
                 if (showRideTrack) {
+                    itemView.setViewVisibility(R.id.gi_ride_box, View.VISIBLE)
                     itemView.setTextViewText(R.id.gi_ride_track, row.rideTrack)
-                    itemView.setViewVisibility(R.id.gi_ride_track, View.VISIBLE)
+                    if (row.rideSub.isNotEmpty()) {
+                        itemView.setTextViewText(R.id.gi_ride_sub, row.rideSub)
+                        itemView.setViewVisibility(R.id.gi_ride_sub, View.VISIBLE)
+                    } else {
+                        itemView.setViewVisibility(R.id.gi_ride_sub, View.GONE)
+                    }
                 } else {
-                    itemView.setViewVisibility(R.id.gi_ride_track, View.GONE)
+                    itemView.setViewVisibility(R.id.gi_ride_box, View.GONE)
                 }
 
                 itemView.setOnClickPendingIntent(R.id.gi_root, openAppIntent(ctx, row, reqSeq++))
@@ -272,8 +284,10 @@ object WidgetUpdater {
         val mgr = AppWidgetManager.getInstance(ctx)
         val snap = WidgetSnapshot.fromJson(AppPrefs(ctx).widgetSnapshotJson)
         providers.forEach { (cls, mode) ->
-            mgr.getAppWidgetIds(ComponentName(ctx, cls)).forEach { id ->
-                mgr.updateAppWidget(id, WidgetRenderer.build(ctx, mode, snap, refreshing))
+            val ids = mgr.getAppWidgetIds(ComponentName(ctx, cls))
+            if (ids.isNotEmpty()) {
+                val rv = WidgetRenderer.build(ctx, mode, snap, refreshing)
+                mgr.updateAppWidget(ids, rv)
             }
         }
     }

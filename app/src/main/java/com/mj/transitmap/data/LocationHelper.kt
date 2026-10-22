@@ -54,17 +54,29 @@ object LocationHelper {
         return if (elapsed >= 0L) elapsed else (System.currentTimeMillis() - loc.time).coerceAtLeast(0L)
     }
 
+    private fun sanitize(src: Location): Location = Location(src.provider ?: "cached").apply {
+        latitude = src.latitude
+        longitude = src.longitude
+        time = src.time
+        elapsedRealtimeNanos = src.elapsedRealtimeNanos
+        if (src.hasAccuracy()) accuracy = src.accuracy
+        if (src.hasSpeed()) speed = src.speed
+        if (src.hasBearing()) bearing = src.bearing
+    }
+
     private fun remember(loc: Location?, ctx: Context? = null): Location? {
         if (loc != null) {
+            val clean = sanitize(loc)
             val cur = latestMemoryLocation
-            if (cur == null || ageMs(loc) <= ageMs(cur) + 5_000L) {
-                latestMemoryLocation = loc
+            if (cur == null || ageMs(clean) <= ageMs(cur) + 5_000L) {
+                latestMemoryLocation = clean
             }
             if (ctx != null) {
-                runCatching { AppPrefs(ctx).saveLastLocation(loc.latitude, loc.longitude) }
+                runCatching { AppPrefs(ctx).saveLastLocation(clean.latitude, clean.longitude) }
             }
+            return clean
         }
-        return loc
+        return null
     }
 
     /**

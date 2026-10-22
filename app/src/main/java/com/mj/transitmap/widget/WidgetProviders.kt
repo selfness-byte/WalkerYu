@@ -107,23 +107,33 @@ class BootReceiver : BroadcastReceiver() {
  * - 위치 ON(📍 위치 ON): 1분(60초) 간격 연쇄 Job + AlarmManager 로 1분마다 위치 및 도착정보 자동 갱신
  */
 class WidgetRefreshJob : JobService() {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var activeJob: kotlinx.coroutines.Job? = null
 
     override fun onStartJob(params: JobParameters): Boolean {
-        scope.launch {
+        activeJob?.cancel()
+        activeJob = scope.launch {
             try {
-                WidgetUpdater.refreshAll(applicationContext)
+                // 백그라운드 JobService 무한 대기 및 메모리/배터리 누수 방지를 위해 12초 타임아웃 적용
+                withTimeoutOrNull(12_000L) {
+                    WidgetUpdater.refreshAll(applicationContext)
+                }
             } finally {
                 syncMinuteSchedule(applicationContext)
-                jobFinished(params, false)
+                runCatching { jobFinished(params, false) }
             }
         }
         return true
     }
 
-    override fun onStopJob(params: JobParameters): Boolean = true
+    override fun onStopJob(params: JobParameters): Boolean {
+        activeJob?.cancel()
+        activeJob = null
+        return true
+    }
 
     override fun onDestroy() {
+        activeJob?.cancel()
         scope.cancel()
         super.onDestroy()
     }

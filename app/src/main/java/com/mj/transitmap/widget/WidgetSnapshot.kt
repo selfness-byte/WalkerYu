@@ -23,8 +23,10 @@ data class WidgetRow(
     val lng: Double = 0.0,
     /** 이 행의 실시간 값이 마지막으로 성공한 시각 (캐시 표시용) */
     val fetchedAt: Long = 0L,
-    /** 탑승 감지 시 기존 노선 행 아래에 표시할 미니 노선 진행 바 문구 (비어 있으면 미표시) */
+    /** 탑승 감지 시 기존 노선 행 아래에 표시할 미니 노선 진행 바 1줄 문구 (비어 있으면 미표시) */
     val rideTrack: String = "",
+    /** 탑승 감지 시 미니 노선 진행 바 2줄 보조 문구 (차량번호·상태·잔여석 등) */
+    val rideSub: String = "",
     /** 직전 주기에 매칭된 탑승 차량 번호판 또는 열차 번호 (연속 추적용) */
     val rideVehicleId: String = "",
 ) {
@@ -35,6 +37,7 @@ data class WidgetRow(
         .put("stopId", stopId).put("stopName", stopName).put("lat", lat).put("lng", lng)
         .put("fetchedAt", fetchedAt)
         .put("rideTrack", rideTrack)
+        .put("rideSub", rideSub)
         .put("rideVehicleId", rideVehicleId)
 
     companion object {
@@ -55,6 +58,7 @@ data class WidgetRow(
             lng = o.optDouble("lng", 0.0),
             fetchedAt = o.optLong("fetchedAt"),
             rideTrack = o.optString("rideTrack"),
+            rideSub = o.optString("rideSub"),
             rideVehicleId = o.optString("rideVehicleId"),
         )
     }
@@ -75,9 +79,16 @@ data class WidgetSnapshot(
     companion object {
         val EMPTY = WidgetSnapshot("⭐ WalkerYu", "앱에서 정류장·역을 눌러 노선을 추가하세요", emptyList(), 0L, false)
 
+        @Volatile
+        private var lastRawJson: String? = null
+
+        @Volatile
+        private var lastParsedSnapshot: WidgetSnapshot = EMPTY
+
         fun fromJson(text: String?): WidgetSnapshot {
             if (text.isNullOrBlank()) return EMPTY
-            return runCatching {
+            if (text == lastRawJson) return lastParsedSnapshot
+            val parsed = runCatching {
                 val o = JSONObject(text)
                 val arr = o.optJSONArray("rows") ?: JSONArray()
                 WidgetSnapshot(
@@ -88,6 +99,9 @@ data class WidgetSnapshot(
                     usedLocation = o.optBoolean("usedLocation"),
                 )
             }.getOrDefault(EMPTY)
+            lastParsedSnapshot = parsed
+            lastRawJson = text
+            return parsed
         }
     }
 }

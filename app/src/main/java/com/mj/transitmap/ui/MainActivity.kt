@@ -91,6 +91,8 @@ class MainActivity : AppCompatActivity() {
     private var sheetJob: Job? = null
     private var routeJob: Job? = null
     private var trainJob: Job? = null
+    private var searchJob: Job? = null
+    private var searchDialog: AlertDialog? = null
 
     private val permLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { res ->
         if (res.values.any { it }) {
@@ -234,14 +236,16 @@ class MainActivity : AppCompatActivity() {
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
         if (level >= TRIM_MEMORY_RUNNING_LOW || level >= TRIM_MEMORY_UI_HIDDEN) {
-            MarkerIcons.trimMemory()
+            MarkerIcons.trimMemory(keepHalf = false)
             runCatching { map.tileProvider?.clearTileCache() }
+        } else if (level >= TRIM_MEMORY_RUNNING_MODERATE) {
+            MarkerIcons.trimMemory(keepHalf = true)
         }
     }
 
     override fun onLowMemory() {
         super.onLowMemory()
-        MarkerIcons.trimMemory()
+        MarkerIcons.trimMemory(keepHalf = false)
         runCatching { map.tileProvider?.clearTileCache() }
     }
 
@@ -250,7 +254,10 @@ class MainActivity : AppCompatActivity() {
         sheetJob?.cancel()
         routeJob?.cancel()
         trainJob?.cancel()
+        searchJob?.cancel()
         hideJob?.cancel()
+        runCatching { searchDialog?.dismiss() }
+        searchDialog = null
         myLocOverlay?.disableMyLocation()
         myLocOverlay = null
         LocationHelper.stopWarmup(this)
@@ -770,7 +777,10 @@ class MainActivity : AppCompatActivity() {
         trainJob?.cancel()
         trainJob = lifecycleScope.launch {
             clearOverlays(trainOverlays)
-            val known = repo.knownStationCoords() + stations.associate { it.id to (it.lat to it.lng) }
+            val localById = stations.associate { it.id to (it.lat to it.lng) }
+            fun coordOf(stationName: String): Pair<Double, Double>? =
+                localById[stationName] ?: repo.coordOfStation(stationName)
+
             val lines = mutableListOf<String>()
             var shown = 0
             for (lineId in selectedLines) {
@@ -778,11 +788,11 @@ class MainActivity : AppCompatActivity() {
                     is LoadResult.Ok -> {
                         val lineShort = SubwayLines.byId(lineId)?.short ?: "?"
                         r.value.forEach { t ->
-                            val p = known[t.stationName] ?: return@forEach
+                            val p = coordOf(t.stationName) ?: return@forEach
                             shown++
                             trainOverlays += trainMarker(t, p, lineShort)
                         }
-                        val near = r.value.filter { known.containsKey(it.stationName) }.take(6)
+                        val near = r.value.filter { coordOf(it.stationName) != null }.take(6)
                         lines += "${SubwayLines.name(lineId)} 운행 ${r.value.size}대" +
                             if (near.isNotEmpty()) "\n  " + near.joinToString("\n  ") { "${it.stationName} ${it.status} · ${it.updn} · ${it.terminal}행" + if (it.express) " (급행)" else "" } else ""
                     }
@@ -812,7 +822,9 @@ class MainActivity : AppCompatActivity() {
     private fun search(keyword: String) {
         if (keyword.isEmpty()) return
         hideKeyboard()
-        lifecycleScope.launch {
+        searchJob?.cancel()
+        runCatching { searchDialog?.dismiss() }
+        searchJob = lifecycleScope.launch {
             showStatus("‘$keyword’ 검색 중…")
             val b = async { repo.searchBusStops(keyword) }
             val s = async { repo.searchStations(keyword) }
@@ -830,8 +842,9 @@ class MainActivity : AppCompatActivity() {
                 return@launch
             }
             statusText.visibility = View.GONE
+            if (isFinishing || isDestroyed) return@launch
             val labels = results.map { (if (it.type == StopType.BUS) "🚌 " else "🚇 ") + it.name + if (it.subText.isNotEmpty() && it.type == StopType.BUS) "  (${it.subText})" else "" }
-            AlertDialog.Builder(this@MainActivity)
+            searchDialog = AlertDialog.Builder(this@MainActivity)
                 .setTitle("검색 결과")
                 .setItems(labels.toTypedArray()) { _, which ->
                     val stop = results[which]

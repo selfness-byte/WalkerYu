@@ -38,6 +38,17 @@ object StationDb {
         return coordsCache ?: emptyMap()
     }
 
+    /** 맵 복사 없이 O(1)로 지하철역 좌표를 조회한다 */
+    fun coordOf(ctx: Context, rawOrNormName: String): Pair<Double, Double>? {
+        if (rawOrNormName.isEmpty()) return null
+        val m = coordsMap(ctx)
+        m[rawOrNormName]?.let { return it }
+        val norm = OverpassApi.normalizeName(rawOrNormName)
+        m[norm]?.let { return it }
+        val withoutParen = norm.substringBefore('(').trim()
+        return if (withoutParen.isNotEmpty()) m[withoutParen] else null
+    }
+
     fun nearby(ctx: Context, lat: Double, lng: Double, radiusM: Int = 1500): List<Stop> {
         // 위·경도 바운딩 박스로 먼저 걸러내어 불필요한 Stop.copy 객체 할당 및 거리 계산을 98% 이상 줄인다.
         val dLat = radiusM / 110_000.0

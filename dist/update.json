@@ -1,11 +1,11 @@
 {
   "appName": "WalkerYu",
   "packageId": "com.mj.transitmap",
-  "versionCode": 5,
-  "versionName": "1.0.3",
-  "apkUrl": "https://raw.githubusercontent.com/selfness-byte/WalkerYu/main/dist/WalkerYu-1.0.3.apk",
-  "sha256": "71178b837f034acefa8b6066c5921f547abee84ae13e01c3bdbc537b3d6ff604",
-  "sizeBytes": 6981438,
-  "updatedAt": "2026-10-22",
-  "notes": "• 이전 설치 버전에 상관없이 언제든 즉시 최신 버전으로 업데이트·재설치 가능하도록 개선\n• OS PackageManager 기반 실시간 버전 감지로 업데이트 후 중복 알림 현상 해결\n• 위젯 탑승 이동 감지: 내 위치와 버스·열차 실시간 위치 비교 시 노선 줄 아래 미니 노선 진행 바(● 현재역/정류장 ━━🚌/🚇━━▶ ◎ 다음역/정류장) 자동 표시\n• 위젯 및 앱 전체 글자 크기 확대·메모리 안정화"
+  "versionCode": 6,
+  "versionName": "1.0.4",
+  "apkUrl": "https://raw.githubusercontent.com/selfness-byte/WalkerYu/main/dist/WalkerYu-1.0.4.apk",
+  "sha256": "617ee94c797ae8d5e2cb1de2711514d8b867da778790b5e17449554a161da153",
+  "sizeBytes": 6987998,
+  "updatedAt": "2026-10-23",
+  "notes": "• 위젯 '방법 1' 탑승 이동 노선 바 2단 개선: 역·정류장 진행 라인(● 현재 ━━🚇/🚌━━▶ ◎ 다음)과 차량·잔여석·거리 보조 줄을 분리해 잘림 없이 표시\n• 탑승 감지 노선 최상단 우선 배치 및 네온 카드(🟢 내 위치 일치 · 탑승중) 강조\n• 메모리 안정화: AppPrefs/WidgetSnapshot 인메모리 캐시, 무할당 Haversine 거리 계산, O(1) 지하철역 좌표 조회, HTTP GZIP 및 512KB 상한, 백그라운드 JobService 타임아웃/취소 안전장치 적용"
 }

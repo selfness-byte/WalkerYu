@@ -1,7 +1,10 @@
 package com.mj.transitmap.data
 
-import android.location.Location
 import org.json.JSONObject
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 /**
  * 지하철역 좌표는 서울 실시간 API 에 없으므로 OpenStreetMap(Overpass API, 키 불필요)에서 조회한다.
@@ -15,6 +18,8 @@ object OverpassApi {
     )
     // 수도권 대략 범위 (남,서,북,동)
     private const val CAPITAL_BBOX = "36.80,126.30,38.20,127.90"
+    private val UNSAFE_SEARCH_REGEX = Regex("[^0-9A-Za-z가-힣·]")
+    private val LINE_SUFFIX_REGEX = Regex("\\s*\\((?:\\d+호선|[가-힣A-Za-z]+선)\\)$")
 
     suspend fun nearbyStations(lat: Double, lng: Double, radiusM: Int = 1500): LoadResult<List<Stop>> {
         val q = """
@@ -30,7 +35,7 @@ object OverpassApi {
     }
 
     suspend fun searchStations(keyword: String): LoadResult<List<Stop>> {
-        val safe = keyword.replace(Regex("[^0-9A-Za-z가-힣·]"), "").removeSuffix("역")
+        val safe = keyword.replace(UNSAFE_SEARCH_REGEX, "").removeSuffix("역")
         if (safe.isEmpty()) return LoadResult.NoData("검색어가 비었습니다")
         val q = """
             [out:json][timeout:20];
@@ -83,17 +88,28 @@ object OverpassApi {
         return byName.values.sortedBy { it.distanceM ?: 0 }
     }
 
-    /** OSM 역명 → 서울 API 역명 */
+    /** OSM 역명 → 서울 API 역명 (정규식 사전 컴파일로 반복 객체 할당 방지) */
     fun normalizeName(raw: String): String {
         var n = raw.trim()
-        n = n.replace(Regex("\\s*\\((?:\\d+호선|[가-힣A-Za-z]+선)\\)$"), "")   // "부천 (1호선)" 류 제거
+        if (n.contains('(')) {
+            n = n.replace(LINE_SUFFIX_REGEX, "")   // "부천 (1호선)" 류 제거
+        }
         if (n.length > 2 && n.endsWith("역")) n = n.dropLast(1)
         return n.trim()
     }
 
+    /**
+     * 두 좌표 간 거리(m)를 무할당(Zero-allocation) Haversine 수식으로 계산한다.
+     * 기존 Location.distanceBetween 호출 시 매번 발생하던 FloatArray(1) 힙 할당을 제거.
+     */
     fun distance(aLat: Double, aLng: Double, bLat: Double, bLng: Double): Int {
-        val out = FloatArray(1)
-        Location.distanceBetween(aLat, aLng, bLat, bLng, out)
-        return out[0].toInt()
+        val dLat = Math.toRadians(bLat - aLat)
+        val dLng = Math.toRadians(bLng - aLng)
+        val sinLat = sin(dLat * 0.5)
+        val sinLng = sin(dLng * 0.5)
+        val a = sinLat * sinLat +
+            cos(Math.toRadians(aLat)) * cos(Math.toRadians(bLat)) * sinLng * sinLng
+        val c = 2.0 * atan2(sqrt(a), sqrt((1.0 - a).coerceAtLeast(0.0)))
+        return (6_371_000.0 * c).toInt()
     }
 }

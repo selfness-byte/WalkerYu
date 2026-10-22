@@ -41,6 +41,12 @@ class TransitRepository(context: Context) {
         return if (extra.isEmpty()) base else base + extra
     }
 
+    /** 전체 맵 복제(700+ 엔트리 복사) 없이 O(1)로 지하철역 좌표를 반환한다 */
+    fun coordOfStation(stationName: String): Pair<Double, Double>? =
+        StationDb.coordOf(appContext, stationName)
+            ?: prefs.knownStations()[stationName]
+            ?: prefs.knownStations()[OverpassApi.normalizeName(stationName)]
+
     suspend fun searchBusStops(keyword: String): LoadResult<List<Stop>> = when {
         sample -> SampleData.busStops(37.5035, 126.7660)
         prefs.gbisKey.isBlank() -> noBusKey

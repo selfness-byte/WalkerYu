@@ -120,12 +120,15 @@ sealed interface GbisEnvelope {
 
 object GbisParser {
 
+    private val AUTH_MSG_REGEX = Regex("<returnAuthMsg>(.*?)</returnAuthMsg>")
+    private val RESULT_MSG_REGEX = Regex("<resultMsg>(.*?)</resultMsg>")
+
     fun parse(httpCode: Int, body: String): GbisEnvelope {
         val t = body.trim()
         if (t.startsWith("<")) {
             // 공공데이터포털 게이트웨이 오류는 XML 로 온다 (키 미등록, 트래픽 초과 등)
-            val auth = Regex("<returnAuthMsg>(.*?)</returnAuthMsg>").find(t)?.groupValues?.get(1)
-                ?: Regex("<resultMsg>(.*?)</resultMsg>").find(t)?.groupValues?.get(1)
+            val auth = AUTH_MSG_REGEX.find(t)?.groupValues?.get(1)
+                ?: RESULT_MSG_REGEX.find(t)?.groupValues?.get(1)
             return GbisEnvelope.Error(portalMessage(auth ?: "XML 응답"), needsKey = auth?.contains("KEY") == true)
         }
         if (httpCode == 401 || httpCode == 403 || t.equals("Unauthorized", ignoreCase = true)) {

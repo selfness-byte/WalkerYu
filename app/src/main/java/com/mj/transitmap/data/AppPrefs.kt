@@ -52,16 +52,19 @@ class AppPrefs(context: Context) {
 
     /**
      * 사용자가 지도에서 추가한 모든 노선 목록 (노선 추가하는 순서대로 그대로 저장·표시).
-     * 기존에 목적지(destinations)에 저장되어 있던 노선이 있으면 자동으로 통합 마이그레이션한다.
+     * 반복적인 JSONArray 역직렬화로 인한 GC 압박을 막기 위해 메모리 캐시(cachedSavedItems)를 함께 운용한다.
      */
     var savedItems: List<BoardItem>
         get() {
             val raw = sp.getString(K_SAVED_ITEMS, null)
             if (raw != null) {
-                return runCatching {
+                if (raw == cachedSavedRaw) return cachedSavedItems
+                val parsed = runCatching {
                     val arr = JSONArray(raw)
                     (0 until arr.length()).mapNotNull { arr.optJSONObject(it)?.let(BoardItem::fromJson) }
                 }.getOrDefault(emptyList())
+                updateSavedMemoryCache(raw, parsed)
+                return parsed
             }
             // 최초 1회: 기존 destinations 에 들어 있던 모든 노선을 순서대로 통합
             val migrated = destinations.flatMap { it.items }.distinctBy { it.key }
@@ -71,35 +74,29 @@ class AppPrefs(context: Context) {
             return migrated
         }
         set(value) {
-            val arr = JSONArray().apply { value.distinctBy { it.key }.forEach { put(it.toJson()) } }
-            sp.edit().putString(K_SAVED_ITEMS, arr.toString()).apply()
+            val dedup = value.distinctBy { it.key }
+            val raw = JSONArray().apply { dedup.forEach { put(it.toJson()) } }.toString()
+            updateSavedMemoryCache(raw, dedup)
+            sp.edit().putString(K_SAVED_ITEMS, raw).apply()
         }
 
-    /** 추가된 정류장/역 키("BUS|stationId" 또는 "SUBWAY|stationName") 집합 */
-    fun starredStopKeys(): Set<String> =
-        savedItems.map { "${it.type}|${it.stopId}" }.toSet()
+    /** 추가된 정류장/역 키("BUS|stationId" 또는 "SUBWAY|stationName") 집합 (메모리 캐시 O(1) 반환) */
+    fun starredStopKeys(): Set<String> {
+        savedItems // 캐시 최신화 보장
+        return cachedStarredStopKeys
+    }
 
     /**
-     * 노선이 추가된 모든 정류장·지하철역의 Stop 목록.
+     * 노선이 추가된 모든 정류장·지하철역의 Stop 목록 (메모리 캐시 반환).
      * 다른 지역에서 대중교통 찾기를 하더라도 지도 위에 항상 별표(★) 마커로 유지하기 위해 사용한다.
      */
-    fun starredStops(): List<Stop> =
-        savedItems
-            .filter { it.stopId.isNotEmpty() && it.lat != 0.0 && it.lng != 0.0 }
-            .distinctBy { "${it.type}|${it.stopId}" }
-            .map {
-                Stop(
-                    type = it.type,
-                    id = it.stopId,
-                    name = it.stopName,
-                    subText = it.stopSub,
-                    lat = it.lat,
-                    lng = it.lng,
-                )
-            }
+    fun starredStops(): List<Stop> {
+        savedItems // 캐시 최신화 보장
+        return cachedStarredStops
+    }
 
     fun isStarredStop(type: StopType, stopId: String): Boolean =
-        savedItems.any { it.type == type && it.stopId == stopId }
+        starredStopKeys().contains("$type|$stopId")
 
     fun isStarredItem(type: StopType, stopId: String, lineId: String, dirKey: String): Boolean =
         savedItems.any {
@@ -199,13 +196,19 @@ class AppPrefs(context: Context) {
         // 너무 커지지 않게 최근 500개만 유지
         val keys = o.keys().asSequence().toList()
         if (keys.size > 500) keys.take(keys.size - 500).forEach { o.remove(it) }
-        sp.edit().putString(K_STATIONS, o.toString()).apply()
+        val raw = o.toString()
+        cachedKnownStationsRaw = null
+        sp.edit().putString(K_STATIONS, raw).apply()
     }
 
     fun knownStations(): Map<String, Pair<Double, Double>> {
-        val o = runCatching { JSONObject(sp.getString(K_STATIONS, "{}") ?: "{}") }.getOrDefault(JSONObject())
+        val raw = sp.getString(K_STATIONS, "{}") ?: "{}"
+        if (raw == cachedKnownStationsRaw) return cachedKnownStations
+        val o = runCatching { JSONObject(raw) }.getOrDefault(JSONObject())
         val out = HashMap<String, Pair<Double, Double>>()
         o.keys().forEach { k -> o.optJSONArray(k)?.let { out[k] = it.optDouble(0) to it.optDouble(1) } }
+        cachedKnownStations = out
+        cachedKnownStationsRaw = raw
         return out
     }
 
@@ -241,5 +244,43 @@ class AppPrefs(context: Context) {
         private const val K_WIDGET_SNAP = "widget_snapshot"
         private const val K_STATIONS = "known_stations"
         private const val K_LAST_LOC = "last_known_loc"
+
+        @Volatile
+        private var cachedSavedRaw: String? = null
+
+        @Volatile
+        private var cachedSavedItems: List<BoardItem> = emptyList()
+
+        @Volatile
+        private var cachedStarredStopKeys: Set<String> = emptySet()
+
+        @Volatile
+        private var cachedStarredStops: List<Stop> = emptyList()
+
+        @Volatile
+        private var cachedKnownStationsRaw: String? = null
+
+        @Volatile
+        private var cachedKnownStations: Map<String, Pair<Double, Double>> = emptyMap()
+
+        @Synchronized
+        private fun updateSavedMemoryCache(raw: String, items: List<BoardItem>) {
+            cachedSavedItems = items
+            cachedStarredStopKeys = items.map { "${it.type}|${it.stopId}" }.toSet()
+            cachedStarredStops = items
+                .filter { it.stopId.isNotEmpty() && it.lat != 0.0 && it.lng != 0.0 }
+                .distinctBy { "${it.type}|${it.stopId}" }
+                .map {
+                    Stop(
+                        type = it.type,
+                        id = it.stopId,
+                        name = it.stopName,
+                        subText = it.stopSub,
+                        lat = it.lat,
+                        lng = it.lng,
+                    )
+                }
+            cachedSavedRaw = raw
+        }
     }
 }

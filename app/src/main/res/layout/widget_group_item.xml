@@ -68,23 +68,46 @@
             android:textStyle="bold" />
     </LinearLayout>
 
-    <!-- 2줄(탑승 감지 시에만 기존 노선 바로 아래에 자동 표시): 방법 1 미니 노선 진행 바 -->
-    <TextView
-        android:id="@+id/gi_ride_track"
+    <!-- 2줄(탑승 감지 시에만 기존 노선 바로 아래에 자동 표시): 방법 1 미니 노선 진행 바 (2단 구성으로 역/정류장 이름 잘림 방지) -->
+    <LinearLayout
+        android:id="@+id/gi_ride_box"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         android:background="@drawable/widget_ride_track_bg"
-        android:ellipsize="end"
-        android:maxLines="1"
+        android:orientation="vertical"
         android:paddingHorizontal="8dp"
-        android:paddingVertical="4dp"
-        android:shadowColor="#DD000000"
-        android:shadowDx="0"
-        android:shadowDy="1"
-        android:shadowRadius="2.5"
-        android:textColor="#E0F7FA"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:visibility="gone" />
+        android:paddingVertical="4.5dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/gi_ride_track"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:shadowColor="#DD000000"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="2.5"
+            android:textColor="#FFFFFF"
+            android:textSize="14.5sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/gi_ride_sub"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="1.5dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:shadowColor="#DD000000"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="2"
+            android:textColor="#80DEEA"
+            android:textSize="12.5sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+    </LinearLayout>
 </LinearLayout>
