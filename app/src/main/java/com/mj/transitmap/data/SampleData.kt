@@ -31,8 +31,41 @@ object SampleData {
 
     fun subwayArrivals(): LoadResult<List<Arrival>> = LoadResult.Ok(
         listOf(
-            Arrival(StopType.SUBWAY, "1001", "${TAG}1호선", "상행 · OO행 - XX방면", "상행", "3분 후", 180, "다음 9분 후", "", SubwayLines.color("1001"), true),
-            Arrival(StopType.SUBWAY, "1001", "${TAG}1호선", "하행 · △△행 - □□방면", "하행", "전역 출발", null, "다음 7분 후", "급행", SubwayLines.color("1001"), true),
+            Arrival(StopType.SUBWAY, "1007", "${TAG}7호선", "상행 · 석남행 - 상동방면", "상행", "곧 도착", 50, "다음 6분 후", "", SubwayLines.color("1007"), true),
+            Arrival(StopType.SUBWAY, "1007", "${TAG}7호선", "하행 · 장암행 - 신중동방면", "하행", "3분 후", 180, "다음 9분 후", "", SubwayLines.color("1007"), true),
+        ),
+        sample = true,
+    )
+
+    fun routeStations(routeId: String): LoadResult<List<RouteStation>> = LoadResult.Ok(
+        listOf(
+            RouteStation("SAMPLE-B0", "소풍터미널", 1, 37.5042, 126.7570),
+            RouteStation("SAMPLE-B1", "시청앞", 2, 37.5043, 126.7666),
+            RouteStation("SAMPLE-B2", "꿈마을사거리", 3, 37.5028, 126.7712),
+            RouteStation("SAMPLE-B3", "신중동역", 4, 37.5030, 126.7760),
+        ),
+        sample = true,
+    )
+
+    fun busLocations(routeId: String): LoadResult<List<BusLocation>> = LoadResult.Ok(
+        listOf(
+            BusLocation("SAMPLE-B1", 2, "경기72바1042", 19),
+        ),
+        sample = true,
+    )
+
+    fun trainPositions(subwayId: String): LoadResult<List<TrainPosition>> = LoadResult.Ok(
+        listOf(
+            TrainPosition(
+                subwayId = subwayId.ifEmpty { "1007" },
+                trainNo = "7124",
+                stationName = "부천시청",
+                updn = "상행/내선",
+                terminal = "석남",
+                status = "출발",
+                express = false,
+                lastTrain = false,
+            ),
         ),
         sample = true,
     )

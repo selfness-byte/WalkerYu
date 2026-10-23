@@ -13,6 +13,7 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -69,6 +70,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var sheetTitle: TextView
     private lateinit var sheetSub: TextView
     private lateinit var sheetDirBanner: TextView
+    private lateinit var sheetScroll: ScrollView
     private lateinit var sheetRows: LinearLayout
     private lateinit var fabColumn: LinearLayout
     private lateinit var btnClearRoute: MaterialButton
@@ -131,6 +133,7 @@ class MainActivity : AppCompatActivity() {
         sheetTitle = findViewById(R.id.sheetTitle)
         sheetSub = findViewById(R.id.sheetSub)
         sheetDirBanner = findViewById(R.id.sheetDirBanner)
+        sheetScroll = findViewById(R.id.sheetScroll)
         sheetRows = findViewById(R.id.sheetRows)
         fabColumn = findViewById(R.id.fabColumn)
         btnClearRoute = findViewById(R.id.btnClearRoute)
@@ -309,6 +312,7 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             if (movedPt == null) {
                 val fast = LocationHelper.peekFast(this@MainActivity)
+                if (isFinishing || isDestroyed) return@launch
                 if (fast != null) {
                     val pt = GeoPoint(fast.latitude, fast.longitude)
                     movedPt = pt
@@ -320,6 +324,7 @@ class MainActivity : AppCompatActivity() {
             val needFresh = movedPt == null || (syncLoc != null && LocationHelper.ageMs(syncLoc) > 15_000L)
             if (needFresh) {
                 val fresh = LocationHelper.fresh(this@MainActivity, timeoutMs = 2500L)
+                if (isFinishing || isDestroyed) return@launch
                 if (fresh != null) {
                     val freshPt = GeoPoint(fresh.latitude, fresh.longitude)
                     val prev = movedPt
@@ -397,6 +402,7 @@ class MainActivity : AppCompatActivity() {
             refreshStopMarkers()
 
             val busRes = b.await()
+            if (isFinishing || isDestroyed) return@launch
             busStops = when (busRes) {
                 is LoadResult.Ok -> busRes.value
                 is LoadResult.NoData -> { msgs += "버스: ${busRes.reason}"; emptyList() }
@@ -500,17 +506,20 @@ class MainActivity : AppCompatActivity() {
         ).joinToString(" · ")
         sheetDirBanner.visibility = View.GONE
         sheetRows.removeAllViews()
+        sheetScroll.scrollTo(0, 0)
         sheetRows.addView(infoText("도착 정보 불러오는 중…"))
 
         sheetJob?.cancel()
         sheetJob = lifecycleScope.launch {
             if (stop.type == StopType.BUS) {
                 val res = repo.busArrivals(stop.id)
+                if (isFinishing || isDestroyed || selected != stop) return@launch
                 selectedArrivals = (res as? LoadResult.Ok)?.value.orEmpty()
                 updateDirectionBanner(stop, res)
                 renderArrivals(stop, res)
             } else {
                 val res = repo.subwayArrivals(stop.id)
+                if (isFinishing || isDestroyed || selected != stop) return@launch
                 selectedLines = (res as? LoadResult.Ok)?.value?.map { it.lineId }?.distinct().orEmpty()
                 val grouped = if (res is LoadResult.Ok) LoadResult.Ok(SeoulParser.groupByDirection(res.value), res.sample) else res
                 selectedArrivals = (grouped as? LoadResult.Ok)?.value.orEmpty()
@@ -629,7 +638,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         v.findViewById<MaterialButton>(R.id.btnRoute).apply {
-            visibility = if (a.type == StopType.BUS && !a.sample) View.VISIBLE else View.GONE
+            visibility = if (a.type == StopType.BUS) View.VISIBLE else View.GONE
             setOnClickListener { showBusRoute(a) }
         }
         return v
@@ -705,6 +714,7 @@ class MainActivity : AppCompatActivity() {
             val st = async { repo.routeStations(a.lineId) }
             val loc = async { repo.busLocations(a.lineId) }
             val stRes = st.await()
+            if (isFinishing || isDestroyed) return@launch
             if (stRes !is LoadResult.Ok) {
                 showStatus("노선 정보: " + when (stRes) {
                     is LoadResult.NoData -> stRes.reason
@@ -742,7 +752,9 @@ class MainActivity : AppCompatActivity() {
             val bySeq = stRes.value.associateBy { it.seq }
             val busIcon = MarkerIcons.busVehicle(this@MainActivity, a.lineName)
             var count = 0
-            when (val lr = loc.await()) {
+            val locRes = loc.await()
+            if (isFinishing || isDestroyed) return@launch
+            when (val lr = locRes) {
                 is LoadResult.Ok -> lr.value.forEach { b ->
                     val s = bySeq[b.seq] ?: stRes.value.firstOrNull { it.stationId == b.stationId } ?: return@forEach
                     val nextS = bySeq[b.seq + 1]
@@ -800,6 +812,7 @@ class MainActivity : AppCompatActivity() {
                     is LoadResult.Failure -> lines += "${SubwayLines.name(lineId)}: ⚠ ${r.reason}"
                 }
             }
+            if (isFinishing || isDestroyed) return@launch
             map.overlays.addAll(trainOverlays)
             map.invalidate()
             if (selected == stop) {

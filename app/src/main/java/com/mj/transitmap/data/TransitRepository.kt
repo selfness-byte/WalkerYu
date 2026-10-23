@@ -1,7 +1,9 @@
 package com.mj.transitmap.data
 
 import android.content.Context
+import android.os.SystemClock
 import android.util.LruCache
+import java.util.Locale
 
 /** 화면·위젯이 공통으로 쓰는 데이터 진입점. 샘플 모드/키 미설정을 여기서 처리한다. */
 class TransitRepository(context: Context) {
@@ -19,7 +21,15 @@ class TransitRepository(context: Context) {
     suspend fun nearbyBusStops(lat: Double, lng: Double): LoadResult<List<Stop>> = when {
         sample -> SampleData.busStops(lat, lng)
         prefs.gbisKey.isBlank() -> noBusKey
-        else -> gbis().aroundStations(lat, lng)
+        else -> {
+            val gridKey = String.format(Locale.US, "%.3f,%.3f", lat, lng)
+            aroundBusStopsCache.get(gridKey)?.let { return LoadResult.Ok(it) }
+            val res = gbis().aroundStations(lat, lng)
+            if (res is LoadResult.Ok && res.value.isNotEmpty()) {
+                aroundBusStopsCache.put(gridKey, res.value)
+            }
+            res
+        }
     }
 
     suspend fun nearbyStations(lat: Double, lng: Double): LoadResult<List<Stop>> {
@@ -66,34 +76,49 @@ class TransitRepository(context: Context) {
     suspend fun busArrivals(stationId: String): LoadResult<List<Arrival>> = when {
         sample || isSampleId(stationId) -> SampleData.busArrivals(stationId)
         prefs.gbisKey.isBlank() -> noBusKey
-        else -> gbis().arrivals(stationId)
+        else -> {
+            busArrivalsCache.get(stationId)?.let { return LoadResult.Ok(it) }
+            val res = gbis().arrivals(stationId)
+            if (res is LoadResult.Ok) busArrivalsCache.put(stationId, res.value)
+            res
+        }
     }
 
     /** 원본(열차별) 목록. 화면에서는 SeoulParser.groupByDirection 으로 묶어서 표시 */
     suspend fun subwayArrivals(stationName: String): LoadResult<List<Arrival>> {
         if (sample || isSampleId(stationName)) return SampleData.subwayArrivals()
+        subwayArrivalsCache.get(stationName)?.let { return LoadResult.Ok(it) }
         val r = subway().arrivals(stationName)
         // 입력한 키가 서울 실시간 지하철 키가 아니면(INFO-100) 공식 sample 키(최대 5건)로 대신 조회
         if (r is LoadResult.Failure && r.needsKey && !prefs.usingSubwaySampleKey) {
             prefs.subwayKeyRejected = true
-            return SeoulSubwayApi("sample").arrivals(stationName)
+            val fallback = SeoulSubwayApi("sample").arrivals(stationName)
+            if (fallback is LoadResult.Ok) subwayArrivalsCache.put(stationName, fallback.value)
+            return fallback
         }
-        if (r is LoadResult.Ok && !prefs.usingSubwaySampleKey) prefs.subwayKeyRejected = false
+        if (r is LoadResult.Ok) {
+            if (!prefs.usingSubwaySampleKey) prefs.subwayKeyRejected = false
+            subwayArrivalsCache.put(stationName, r.value)
+        }
         return r
     }
 
     suspend fun trainPositions(subwayId: String): LoadResult<List<TrainPosition>> {
-        if (sample) return LoadResult.NoData("샘플 모드에서는 열차 위치를 제공하지 않습니다")
+        if (sample) return SampleData.trainPositions(subwayId)
+        trainPositionsCache.get(subwayId)?.let { return LoadResult.Ok(it) }
         val r = subway().positions(subwayId)
         if (r is LoadResult.Failure && r.needsKey && !prefs.usingSubwaySampleKey) {
             prefs.subwayKeyRejected = true
-            return SeoulSubwayApi("sample").positions(subwayId)
+            val fallback = SeoulSubwayApi("sample").positions(subwayId)
+            if (fallback is LoadResult.Ok) trainPositionsCache.put(subwayId, fallback.value)
+            return fallback
         }
+        if (r is LoadResult.Ok) trainPositionsCache.put(subwayId, r.value)
         return r
     }
 
     suspend fun routeStations(routeId: String): LoadResult<List<RouteStation>> = when {
-        sample -> LoadResult.NoData("샘플 모드에서는 노선 위치를 제공하지 않습니다")
+        sample || isSampleId(routeId) -> SampleData.routeStations(routeId)
         prefs.gbisKey.isBlank() -> noBusKey
         else -> {
             synchronized(routeStationsCache) { routeStationsCache.get(routeId) }?.let {
@@ -108,13 +133,45 @@ class TransitRepository(context: Context) {
     }
 
     suspend fun busLocations(routeId: String): LoadResult<List<BusLocation>> = when {
-        sample -> LoadResult.NoData("샘플 모드")
+        sample || isSampleId(routeId) -> SampleData.busLocations(routeId)
         prefs.gbisKey.isBlank() -> noBusKey
-        else -> gbis().busLocations(routeId)
+        else -> {
+            busLocationsCache.get(routeId)?.let { return LoadResult.Ok(it) }
+            val res = gbis().busLocations(routeId)
+            if (res is LoadResult.Ok) busLocationsCache.put(routeId, res.value)
+            res
+        }
+    }
+
+    private class TimedCache<V : Any>(maxEntries: Int, private val ttlMs: Long) {
+        private data class Entry<V>(val value: V, val savedAtMs: Long)
+        private val lru = LruCache<String, Entry<V>>(maxEntries)
+
+        @Synchronized
+        fun get(key: String): V? {
+            val e = lru.get(key) ?: return null
+            if (SystemClock.elapsedRealtime() - e.savedAtMs > ttlMs) {
+                lru.remove(key)
+                return null
+            }
+            return e.value
+        }
+
+        @Synchronized
+        fun put(key: String, value: V) {
+            lru.put(key, Entry(value, SystemClock.elapsedRealtime()))
+        }
     }
 
     companion object {
         /** 버스 노선별 경유 정류장 목록 메모리 캐시 (최대 24개 노선 보관 — 반복 네트워크 요청 및 메모리 할당 절감) */
         private val routeStationsCache = LruCache<String, List<RouteStation>>(24)
+        /** 주변 버스정류장 단기 캐시 (45초 TTL — 동일 위치 중복 5지점 병렬 조회 방지) */
+        private val aroundBusStopsCache = TimedCache<List<Stop>>(maxEntries = 16, ttlMs = 45_000L)
+        /** 실시간 도착·차량 위치 단기 디바운스 캐시 (8초 TTL — 위젯/화면 동시 호출 및 API 일일 한도 소진 방지) */
+        private val busArrivalsCache = TimedCache<List<Arrival>>(maxEntries = 24, ttlMs = 8_000L)
+        private val subwayArrivalsCache = TimedCache<List<Arrival>>(maxEntries = 24, ttlMs = 8_000L)
+        private val busLocationsCache = TimedCache<List<BusLocation>>(maxEntries = 16, ttlMs = 8_000L)
+        private val trainPositionsCache = TimedCache<List<TrainPosition>>(maxEntries = 16, ttlMs = 8_000L)
     }
 }

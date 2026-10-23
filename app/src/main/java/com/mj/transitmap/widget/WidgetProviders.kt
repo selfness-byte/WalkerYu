@@ -29,6 +29,16 @@ abstract class BaseTransitWidget : AppWidgetProvider() {
         WidgetRefreshJob.runNow(context)
     }
 
+    override fun onAppWidgetOptionsChanged(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int,
+        newOptions: android.os.Bundle,
+    ) {
+        super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions)
+        WidgetUpdater.renderAll(context)
+    }
+
     override fun onEnabled(context: Context) {
         WidgetRefreshJob.schedulePeriodic(context)
         WidgetRefreshJob.syncMinuteSchedule(context)
@@ -53,29 +63,29 @@ class WidgetActionReceiver : BroadcastReceiver() {
                 prefs.widgetUseLocation = !prefs.widgetUseLocation
                 WidgetRefreshJob.syncMinuteSchedule(appCtx)
                 WidgetUpdater.renderAll(appCtx, refreshing = true)
-                runAsyncRefresh(appCtx)
+                runAsyncRefresh(appCtx, force = true)
             }
             ACTION_REFRESH -> {
                 WidgetRefreshJob.syncMinuteSchedule(appCtx)
                 WidgetUpdater.renderAll(appCtx, refreshing = true)
-                runAsyncRefresh(appCtx)
+                runAsyncRefresh(appCtx, force = true)
             }
             ACTION_MINUTE_TICK -> {
                 if (AppPrefs(appCtx).widgetUseLocation && WidgetUpdater.hasWidgets(appCtx)) {
                     WidgetRefreshJob.syncMinuteSchedule(appCtx)
-                    runAsyncRefresh(appCtx)
+                    runAsyncRefresh(appCtx, force = false)
                 }
             }
         }
     }
 
-    private fun runAsyncRefresh(appCtx: Context) {
+    private fun runAsyncRefresh(appCtx: Context, force: Boolean) {
         val pending = goAsync()
         receiverScope.launch {
             try {
                 // BroadcastReceiver ANR(10초 제한) 방지를 위해 8.5초 타임아웃 적용
                 withTimeoutOrNull(8_500L) {
-                    WidgetUpdater.refreshAll(appCtx)
+                    WidgetUpdater.refreshAll(appCtx, force = force)
                 }
             } finally {
                 WidgetRefreshJob.syncMinuteSchedule(appCtx)
@@ -94,9 +104,18 @@ class WidgetActionReceiver : BroadcastReceiver() {
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED && WidgetUpdater.hasWidgets(context)) {
-            WidgetRefreshJob.schedulePeriodic(context)
-            WidgetRefreshJob.syncMinuteSchedule(context)
+        val act = intent.action ?: return
+        if (act == Intent.ACTION_BOOT_COMPLETED ||
+            act == Intent.ACTION_MY_PACKAGE_REPLACED ||
+            act == "android.intent.action.QUICKBOOT_POWERON"
+        ) {
+            val appCtx = context.applicationContext
+            if (WidgetUpdater.hasWidgets(appCtx)) {
+                WidgetUpdater.renderAll(appCtx)
+                WidgetRefreshJob.schedulePeriodic(appCtx)
+                WidgetRefreshJob.syncMinuteSchedule(appCtx)
+                WidgetRefreshJob.runNow(appCtx)
+            }
         }
     }
 }
@@ -111,12 +130,13 @@ class WidgetRefreshJob : JobService() {
     private var activeJob: kotlinx.coroutines.Job? = null
 
     override fun onStartJob(params: JobParameters): Boolean {
+        val isForce = params.jobId == JOB_NOW
         activeJob?.cancel()
         activeJob = scope.launch {
             try {
                 // 백그라운드 JobService 무한 대기 및 메모리/배터리 누수 방지를 위해 12초 타임아웃 적용
                 withTimeoutOrNull(12_000L) {
-                    WidgetUpdater.refreshAll(applicationContext)
+                    WidgetUpdater.refreshAll(applicationContext, force = isForce)
                 }
             } finally {
                 syncMinuteSchedule(applicationContext)

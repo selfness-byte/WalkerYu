@@ -18,8 +18,9 @@ cp "$NRM_BUILD_ROOT/GyeonggiTransitMap/app/outputs/apk/debug/app-debug.apk" "$PR
 cp "$NRM_BUILD_ROOT/GyeonggiTransitMap/app/outputs/apk/debug/app-debug.apk" "$PROJECT/dist/WalkerYu-1.0.0.apk"
 cp "$NRM_BUILD_ROOT/GyeonggiTransitMap/app/outputs/apk/debug/app-debug.apk" "$PROJECT/dist/WalkerYu-1.0.3.apk"
 cp "$NRM_BUILD_ROOT/GyeonggiTransitMap/app/outputs/apk/debug/app-debug.apk" "$PROJECT/dist/WalkerYu-1.0.4.apk"
-echo "APK: $PROJECT/dist/WalkerYu-1.0.4.apk"
+cp "$NRM_BUILD_ROOT/GyeonggiTransitMap/app/outputs/apk/debug/app-debug.apk" "$PROJECT/dist/WalkerYu-1.0.5.apk"
+echo "APK: $PROJECT/dist/WalkerYu-1.0.5.apk"
 if [ "$1" = "--install" ]; then
-  adb install -r "$PROJECT/dist/WalkerYu-1.0.4.apk"
+  adb install -r "$PROJECT/dist/WalkerYu-1.0.5.apk"
   adb shell am start -n com.mj.transitmap/.ui.MainActivity
 fi

@@ -53,11 +53,11 @@ class DestinationActivity : AppCompatActivity() {
             return
         }
         items.forEachIndexed { idx, item ->
-            list.addView(itemCard(idx, item))
+            list.addView(itemCard(idx, items.size, item))
         }
     }
 
-    private fun itemCard(idx: Int, item: BoardItem): View {
+    private fun itemCard(idx: Int, total: Int, item: BoardItem): View {
         val card = MaterialCardView(this).apply {
             layoutParams = LinearLayout.LayoutParams(-1, -2).apply { setMargins(0, 0, 0, dp(10)) }
             radius = dp(14).toFloat()
@@ -67,7 +67,7 @@ class DestinationActivity : AppCompatActivity() {
         }
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(dp(14), dp(12), dp(10), dp(12))
+            setPadding(dp(14), dp(12), dp(8), dp(12))
         }
         card.addView(row)
 
@@ -79,11 +79,46 @@ class DestinationActivity : AppCompatActivity() {
             setTextColor(0xFF102A43.toInt())
             setTypeface(typeface, Typeface.BOLD)
             layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
+            setOnClickListener {
+                startActivity(
+                    Intent(this@DestinationActivity, MainActivity::class.java)
+                        .putExtra(MainActivity.EXTRA_STOP_TYPE, item.type.name)
+                        .putExtra(MainActivity.EXTRA_STOP_ID, item.stopId)
+                        .putExtra(MainActivity.EXTRA_STOP_NAME, item.stopName)
+                        .putExtra(MainActivity.EXTRA_LAT, item.lat)
+                        .putExtra(MainActivity.EXTRA_LNG, item.lng)
+                        .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                )
+            }
         })
+
+        if (total > 1) {
+            row.addView(MaterialButton(this, null, com.google.android.material.R.attr.borderlessButtonStyle).apply {
+                text = "▲"
+                minWidth = 0
+                isEnabled = idx > 0
+                setPadding(dp(8), 0, dp(8), 0)
+                setOnClickListener {
+                    prefs.moveSavedItem(item.key, -1)
+                    changed()
+                }
+            })
+            row.addView(MaterialButton(this, null, com.google.android.material.R.attr.borderlessButtonStyle).apply {
+                text = "▼"
+                minWidth = 0
+                isEnabled = idx < total - 1
+                setPadding(dp(8), 0, dp(8), 0)
+                setOnClickListener {
+                    prefs.moveSavedItem(item.key, +1)
+                    changed()
+                }
+            })
+        }
 
         row.addView(MaterialButton(this, null, com.google.android.material.R.attr.borderlessButtonStyle).apply {
             text = "삭제"
             minWidth = 0
+            setPadding(dp(8), 0, dp(8), 0)
             setOnClickListener {
                 prefs.toggleSavedItem(item)
                 changed()

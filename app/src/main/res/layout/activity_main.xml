@@ -351,6 +351,7 @@
                 android:visibility="gone" />
 
             <ScrollView
+                android:id="@+id/sheetScroll"
                 android:layout_width="match_parent"
                 android:layout_height="290dp"
                 android:layout_marginTop="6dp">

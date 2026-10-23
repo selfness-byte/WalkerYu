@@ -85,6 +85,9 @@ class SettingsActivity : AppCompatActivity() {
             finish()
         }
 
+        findViewById<MaterialButton>(R.id.btnManageSavedRoutes).setOnClickListener {
+            startActivity(Intent(this, DestinationActivity::class.java))
+        }
         findViewById<MaterialButton>(R.id.btnAppSettings).setOnClickListener {
             startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
         }
@@ -121,10 +124,11 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun updatePermText() {
-        permText.text = when {
+        val locStatus = when {
             !LocationHelper.hasForeground(this) -> "위치 권한: 없음"
             !LocationHelper.hasBackground(this) -> "위치 권한: 앱 사용 중에만 (위젯 위치 갱신은 제한될 수 있음)"
             else -> "위치 권한: 항상 허용"
         }
+        permText.text = "$locStatus · 등록된 위젯 노선 ${prefs.savedItems.size}개"
     }
 }

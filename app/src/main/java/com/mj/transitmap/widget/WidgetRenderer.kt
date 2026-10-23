@@ -293,10 +293,18 @@ object WidgetUpdater {
     }
 
     private val refreshMutex = Mutex()
+    @Volatile
+    private var lastRefreshCompletedElapsedMs = 0L
 
-    suspend fun refreshAll(ctx: Context) {
+    suspend fun refreshAll(ctx: Context, force: Boolean = false) {
         if (!hasWidgets(ctx)) return
         refreshMutex.withLock {
+            // JobScheduler와 AlarmManager가 같은 시점에 동시에 깨어났을 때 불필요한 중복 API 조회를 방지
+            val nowElapsed = android.os.SystemClock.elapsedRealtime()
+            if (!force && lastRefreshCompletedElapsedMs > 0L && nowElapsed - lastRefreshCompletedElapsedMs < 12_000L) {
+                renderAll(ctx, refreshing = false)
+                return@withLock
+            }
             val prefs = AppPrefs(ctx)
             val startLoc = prefs.widgetUseLocation
             val prev = WidgetSnapshot.fromJson(prefs.widgetSnapshotJson)
@@ -306,6 +314,7 @@ object WidgetUpdater {
                 snap = runCatching { WidgetDataBuilder(ctx).build(snap) }.getOrDefault(snap)
             }
             prefs.widgetSnapshotJson = snap.toJson()
+            lastRefreshCompletedElapsedMs = android.os.SystemClock.elapsedRealtime()
             renderAll(ctx, refreshing = false)
         }
     }

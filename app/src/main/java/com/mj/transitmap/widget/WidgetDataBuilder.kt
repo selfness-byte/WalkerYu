@@ -260,13 +260,17 @@ class WidgetDataBuilder(private val context: Context) {
             val trainDist = chosen.second
             val currStation = matched.stationName
 
-            // 승차역과 현재 열차 역이 같을 때는 direction("상행 · 석남행 - 상동방면")에서 다음 역 힌트 추출
-            val nextHint = if (OverpassApi.normalizeName(currStation) == OverpassApi.normalizeName(item.stopName)) {
+            // 1순위: 수도권 호선별 역 순서 테이블에서 정확한 다음역·이전역 O(1) 조회
+            // 2순위: 승차역과 현재 열차 역이 같을 때 direction("상행 · 석남행 - 상동방면")에서 다음 역 힌트 추출
+            val seqNext = SubwayLines.adjacentStation(item.lineId, currStation, matched.updn, matched.terminal, forward = true)
+            val seqPrev = SubwayLines.adjacentStation(item.lineId, currStation, matched.updn, matched.terminal, forward = false)
+            val nextHint = seqNext ?: if (OverpassApi.normalizeName(currStation) == OverpassApi.normalizeName(item.stopName)) {
                 NEXT_STATION_HINT_REGEX.find(item.direction)?.groupValues?.get(1)?.trim()
             } else null
 
             val trackLine = if (matched.status == "진입" || matched.status == "전역출발") {
-                "● 이전역 출발  ━━🚇━━▶  ◎ ${currStation}역 (${matched.status})"
+                val fromLabel = if (!seqPrev.isNullOrEmpty()) "${seqPrev}역 출발" else "이전역 출발"
+                "● $fromLabel  ━━🚇━━▶  ◎ ${currStation}역 (${matched.status})"
             } else {
                 val nextLabel = if (!nextHint.isNullOrEmpty()) "${nextHint}역" else "${matched.terminal} 방면 다음역"
                 "● ${currStation}역  ━━🚇━━▶  ◎ $nextLabel"

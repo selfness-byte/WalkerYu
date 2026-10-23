@@ -134,6 +134,22 @@ class AppPrefs(context: Context) {
         savedItems = savedItems.filterNot { it.type == type && it.stopId == stopId }
     }
 
+    /** 저장된 노선 순서 변경 (delta: -1 위로, +1 아래로) */
+    fun moveSavedItem(itemKey: String, delta: Int) {
+        val list = savedItems.toMutableList()
+        val i = list.indexOfFirst { it.key == itemKey }
+        val j = i + delta
+        if (i < 0 || j !in list.indices) return
+        val tmp = list[i]
+        list[i] = list[j]
+        list[j] = tmp
+        savedItems = list
+    }
+
+    fun clearSavedItems() {
+        savedItems = emptyList()
+    }
+
     var widgetSnapshotJson: String?
         get() = sp.getString(K_WIDGET_SNAP, null)
         set(v) = sp.edit().putString(K_WIDGET_SNAP, v).apply()

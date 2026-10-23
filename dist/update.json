@@ -1,11 +1,11 @@
 {
   "appName": "WalkerYu",
   "packageId": "com.mj.transitmap",
-  "versionCode": 6,
-  "versionName": "1.0.4",
-  "apkUrl": "https://raw.githubusercontent.com/selfness-byte/WalkerYu/main/dist/WalkerYu-1.0.4.apk",
-  "sha256": "617ee94c797ae8d5e2cb1de2711514d8b867da778790b5e17449554a161da153",
-  "sizeBytes": 6987998,
+  "versionCode": 7,
+  "versionName": "1.0.5",
+  "apkUrl": "https://raw.githubusercontent.com/selfness-byte/WalkerYu/main/dist/WalkerYu-1.0.5.apk",
+  "sha256": "399a588d8e898e58a8b85682f6e84e962885b24197d91020bb9a3825cf0abf0e",
+  "sizeBytes": 7002658,
   "updatedAt": "2026-10-23",
-  "notes": "• 위젯 '방법 1' 탑승 이동 노선 바 2단 개선: 역·정류장 진행 라인(● 현재 ━━🚇/🚌━━▶ ◎ 다음)과 차량·잔여석·거리 보조 줄을 분리해 잘림 없이 표시\n• 탑승 감지 노선 최상단 우선 배치 및 네온 카드(🟢 내 위치 일치 · 탑승중) 강조\n• 메모리 안정화: AppPrefs/WidgetSnapshot 인메모리 캐시, 무할당 Haversine 거리 계산, O(1) 지하철역 좌표 조회, HTTP GZIP 및 512KB 상한, 백그라운드 JobService 타임아웃/취소 안전장치 적용"
+  "notes": "• 수도권 지하철 15개 전 노선 역 순서 테이블(LINE_SEQUENCES) 탑재: 열차 탑승 중 모든 중간 정차역에서 다음역·전역을 O(1)로 정확히 산출하여 위젯 노선 진행 바 표시\n• 실시간 API 인메모리 캐시(TimedCache) 도입: 위젯·앱 동시 조회 시 중복 네트워크 호출을 차단하고 응답 속도 향상 및 일일 API 쿼터 보호\n• 위젯 안정성 강화: 앱 업데이트(MY_PACKAGE_REPLACED)·재부팅·위젯 크기 조절 시 즉시 자동 복구 및 12초 중복 갱신 방지 가드 추가\n• 설정 화면에서 '⭐ 추가한 위젯 노선 순서·목록 관리'(▲/▼ 순서 변경, 지도 바로 이동, 삭제) 지원 및 하단 시트 비동기 생명주기 안전성 강화"
 }
